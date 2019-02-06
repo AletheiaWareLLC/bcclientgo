@@ -249,13 +249,6 @@ func main() {
 		case "export-keys":
 			if len(os.Args) >= 3 {
 				alias := os.Args[2]
-				// Generate a random access code
-				accessCode, err := bcgo.GenerateRandomKey()
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println("Access Code:", base64.RawURLEncoding.EncodeToString(accessCode))
 				keystore, err := bcgo.GetKeyStore()
 				if err != nil {
 					log.Println(err)
@@ -266,17 +259,20 @@ func main() {
 					log.Println(err)
 					return
 				}
-				encryptedPassword, err := bcgo.EncryptAESGCM(accessCode, password)
-				if err != nil {
-					log.Println(err)
-					return
-				}
 				privateKey, err := bcgo.GetRSAPrivateKey(keystore, alias, password)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				log.Println(privateKey)
+
+				// Generate a random access code
+				accessCode, err := bcgo.GenerateRandomKey()
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("Access Code:", base64.RawURLEncoding.EncodeToString(accessCode))
+
 				data, err := x509.MarshalPKCS8PrivateKey(privateKey)
 				if err != nil {
 					log.Println(err)
@@ -288,6 +284,11 @@ func main() {
 					return
 				}
 				publicKey, err := bcgo.RSAPublicKeyToBytes(&privateKey.PublicKey)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				encryptedPassword, err := bcgo.EncryptAESGCM(accessCode, password)
 				if err != nil {
 					log.Println(err)
 					return
