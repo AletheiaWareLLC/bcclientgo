@@ -48,19 +48,19 @@ func main() {
 					return
 				}
 				log.Println(publicKey)
-				base64, err := bcgo.RSAPublicKeyToBase64(publicKey)
+				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(publicKey)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				log.Println(base64)
+				log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
 			} else {
 				node, err := bcgo.GetNode()
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				publicKey, err := bcgo.RSAPublicKeyToBytes(&node.Key.PublicKey)
+				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
 				if err != nil {
 					log.Println(err)
 					return
@@ -71,7 +71,7 @@ func main() {
 					log.Println("Registering")
 					a := &aliasgo.Alias{
 						Alias:        node.Alias,
-						PublicKey:    publicKey,
+						PublicKey:    publicKeyBytes,
 						PublicFormat: bcgo.PublicKeyFormat_PKIX,
 					}
 					data, err := proto.Marshal(a)
@@ -90,7 +90,7 @@ func main() {
 
 					response, err := http.PostForm(bcgo.BC_WEBSITE+"/alias", url.Values{
 						"alias":              {node.Alias},
-						"publicKey":          {base64.RawURLEncoding.EncodeToString(publicKey)},
+						"publicKey":          {base64.RawURLEncoding.EncodeToString(publicKeyBytes)},
 						"publicKeyFormat":    {"PKIX"},
 						"signature":          {base64.RawURLEncoding.EncodeToString(signature)},
 						"signatureAlgorithm": {signatureAlgorithm.String()},
@@ -295,12 +295,12 @@ func main() {
 					log.Println(err)
 					return
 				}
-				encryptedData, err := bcgo.EncryptAESGCM(accessCode, data)
+				encryptedPrivateKeyBytes, err := bcgo.EncryptAESGCM(accessCode, data)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				publicKey, err := bcgo.RSAPublicKeyToBytes(&privateKey.PublicKey)
+				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&privateKey.PublicKey)
 				if err != nil {
 					log.Println(err)
 					return
@@ -312,9 +312,9 @@ func main() {
 				}
 				response, err := http.PostForm(bcgo.BC_WEBSITE+"/keys", url.Values{
 					"alias":            {alias},
-					"publicKey":        {base64.RawURLEncoding.EncodeToString(publicKey)},
+					"publicKey":        {base64.RawURLEncoding.EncodeToString(publicKeyBytes)},
 					"publicKeyFormat":  {"PKIX"},
-					"privateKey":       {base64.RawURLEncoding.EncodeToString(encryptedData)},
+					"privateKey":       {base64.RawURLEncoding.EncodeToString(encryptedPrivateKeyBytes)},
 					"privateKeyFormat": {"PKCS8"},
 					"password":         {base64.RawURLEncoding.EncodeToString(encryptedPassword)},
 				})
@@ -337,14 +337,9 @@ func main() {
 		case "random":
 			log.Println(bcgo.GenerateRandomKey())
 		default:
-			log.Println("Cannot handle", os.Args)
+			bcgo.GetAndPrintURL(bcgo.BC_WEBSITE)
 		}
 	} else {
-		response, err := http.Get(bcgo.BC_WEBSITE)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		log.Println(response)
+		bcgo.GetAndPrintURL(bcgo.BC_WEBSITE)
 	}
 }
