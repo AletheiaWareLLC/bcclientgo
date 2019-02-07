@@ -34,67 +34,84 @@ func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "alias":
-			node, err := bcgo.GetNode()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			publicKey, err := bcgo.RSAPublicKeyToBytes(&node.Key.PublicKey)
-			if err != nil {
-				log.Println(err)
-				return
-			}
 			// Open Alias Channel
 			aliases, err := aliasgo.OpenAliasChannel()
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			alias, err := aliasgo.GetAlias(aliases, &node.Key.PublicKey)
-			if err != nil {
-				log.Println(err)
-				a := &aliasgo.Alias{
-					Alias:        node.Alias,
-					PublicKey:    publicKey,
-					PublicFormat: bcgo.PublicKeyFormat_PKIX,
-				}
-				data, err := proto.Marshal(a)
+			if len(os.Args) > 2 {
+				log.Println(os.Args[2])
+				publicKey, err := aliasgo.GetPublicKey(aliases, os.Args[2])
 				if err != nil {
 					log.Println(err)
 					return
 				}
+				log.Println(publicKey)
+				base64, err := bcgo.RSAPublicKeyToBase64(publicKey)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println(base64)
+			} else {
+				node, err := bcgo.GetNode()
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				publicKey, err := bcgo.RSAPublicKeyToBytes(&node.Key.PublicKey)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				alias, err := aliasgo.GetAlias(aliases, &node.Key.PublicKey)
+				if err != nil {
+					log.Println(err)
+					log.Println("Registering")
+					a := &aliasgo.Alias{
+						Alias:        node.Alias,
+						PublicKey:    publicKey,
+						PublicFormat: bcgo.PublicKeyFormat_PKIX,
+					}
+					data, err := proto.Marshal(a)
+					if err != nil {
+						log.Println(err)
+						return
+					}
 
-				signatureAlgorithm := bcgo.SignatureAlgorithm_SHA512WITHRSA_PSS
+					signatureAlgorithm := bcgo.SignatureAlgorithm_SHA512WITHRSA_PSS
 
-				signature, err := bcgo.CreateSignature(node.Key, bcgo.Hash(data), signatureAlgorithm)
-				if err != nil {
-					log.Println(err)
-					return
-				}
+					signature, err := bcgo.CreateSignature(node.Key, bcgo.Hash(data), signatureAlgorithm)
+					if err != nil {
+						log.Println(err)
+						return
+					}
 
-				response, err := http.PostForm(bcgo.BC_WEBSITE+"/alias", url.Values{
-					"alias":              {node.Alias},
-					"publicKey":          {base64.RawURLEncoding.EncodeToString(publicKey)},
-					"publicKeyFormat":    {"PKIX"},
-					"signature":          {base64.RawURLEncoding.EncodeToString(signature)},
-					"signatureAlgorithm": {signatureAlgorithm.String()},
-				})
-				if err != nil {
-					log.Println(err)
-					return
+					response, err := http.PostForm(bcgo.BC_WEBSITE+"/alias", url.Values{
+						"alias":              {node.Alias},
+						"publicKey":          {base64.RawURLEncoding.EncodeToString(publicKey)},
+						"publicKeyFormat":    {"PKIX"},
+						"signature":          {base64.RawURLEncoding.EncodeToString(signature)},
+						"signatureAlgorithm": {signatureAlgorithm.String()},
+					})
+					if err != nil {
+						log.Println(err)
+						return
+					}
+					log.Println(response)
+					if err := aliases.Sync(); err != nil {
+						log.Println(err)
+						return
+					}
+					alias, err = aliasgo.GetAlias(aliases, &node.Key.PublicKey)
+					if err != nil {
+						log.Println(err)
+						return
+					}
 				}
-				log.Println(response)
-				if err := aliases.Sync(); err != nil {
-					log.Println(err)
-					return
-				}
-				alias, err = aliasgo.GetAlias(aliases, &node.Key.PublicKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
+				log.Println("Registered as", alias)
 			}
-			log.Println("Registered as", alias)
 		case "block":
 			if len(os.Args) > 3 {
 				channel := os.Args[2]
@@ -149,7 +166,7 @@ func main() {
 				log.Println(err)
 				return
 			}
-			log.Println(node.Alias)
+			log.Println(node)
 		case "record":
 			if len(os.Args) > 3 {
 				channel := os.Args[2]
@@ -309,6 +326,18 @@ func main() {
 			} else {
 				log.Println("export-keys <alias>")
 			}
+		case "keystore":
+			log.Println(bcgo.GetKeyStore())
+		case "hosts":
+			log.Println(bcgo.GetHosts())
+		case "add-host":
+			log.Println(bcgo.AddHost(os.Args[2]))
+		case "cache":
+			log.Println(bcgo.GetCache())
+		case "random":
+			log.Println(bcgo.GenerateRandomKey())
+		default:
+			log.Println("Cannot handle", os.Args)
 		}
 	} else {
 		response, err := http.Get(bcgo.BC_WEBSITE)
