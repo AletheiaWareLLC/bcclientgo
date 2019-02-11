@@ -47,7 +47,6 @@ func main() {
 					log.Println(err)
 					return
 				}
-				log.Println(publicKey)
 				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(publicKey)
 				if err != nil {
 					log.Println(err)
@@ -60,55 +59,10 @@ func main() {
 					log.Println(err)
 					return
 				}
-				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
 				alias, err := aliasgo.GetAlias(aliases, &node.Key.PublicKey)
 				if err != nil {
 					log.Println(err)
-					log.Println("Registering")
-					a := &aliasgo.Alias{
-						Alias:        node.Alias,
-						PublicKey:    publicKeyBytes,
-						PublicFormat: bcgo.PublicKeyFormat_PKIX,
-					}
-					data, err := proto.Marshal(a)
-					if err != nil {
-						log.Println(err)
-						return
-					}
-
-					signatureAlgorithm := bcgo.SignatureAlgorithm_SHA512WITHRSA_PSS
-
-					signature, err := bcgo.CreateSignature(node.Key, bcgo.Hash(data), signatureAlgorithm)
-					if err != nil {
-						log.Println(err)
-						return
-					}
-
-					response, err := http.PostForm(bcgo.BC_WEBSITE+"/alias", url.Values{
-						"alias":              {node.Alias},
-						"publicKey":          {base64.RawURLEncoding.EncodeToString(publicKeyBytes)},
-						"publicKeyFormat":    {"PKIX"},
-						"signature":          {base64.RawURLEncoding.EncodeToString(signature)},
-						"signatureAlgorithm": {signatureAlgorithm.String()},
-					})
-					if err != nil {
-						log.Println(err)
-						return
-					}
-					log.Println(response)
-					if err := aliases.Sync(); err != nil {
-						log.Println(err)
-						return
-					}
-					alias, err = aliasgo.GetAlias(aliases, &node.Key.PublicKey)
-					if err != nil {
-						log.Println(err)
-						return
-					}
+					return
 				}
 				log.Println("Registered as", alias)
 			}
@@ -125,22 +79,10 @@ func main() {
 					log.Println(err)
 					return
 				}
-				block, err := bcgo.ReadBlockFile(c.Cache, hash)
+				block, err := c.GetBlock(hash)
 				if err != nil {
 					log.Println(err)
-					block, err = bcgo.GetBlock(&bcgo.Reference{
-						ChannelName: channel,
-						BlockHash:   hash,
-					})
-					if err != nil {
-						log.Println(err)
-						return
-					}
-					err = bcgo.WriteBlockFile(c.Cache, hash, block)
-					if err != nil {
-						log.Println(err)
-						return
-					}
+					return
 				}
 
 				bcgo.PrintBlock(hash, block)
@@ -149,36 +91,80 @@ func main() {
 			}
 		case "head":
 			if len(os.Args) > 2 {
-				reference, err := bcgo.GetHead(os.Args[2])
+				c, err := bcgo.OpenChannel(os.Args[2])
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				log.Println("Timestamp:", reference.Timestamp)
-				log.Println("ChannelName:", reference.ChannelName)
-				log.Println("BlockHash:", base64.RawURLEncoding.EncodeToString(reference.BlockHash))
+				head, err := c.GetHead()
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("Head:", base64.RawURLEncoding.EncodeToString(head))
 			} else {
 				log.Println("Usage: head <channel-name>")
 			}
+		case "init":
+			if err := bcgo.AddPeer(aliasgo.ALIAS, bcgo.BC_HOST); err != nil {
+				log.Println(err)
+				return
+			}
+			// Open Alias Channel
+			aliases, err := aliasgo.OpenAliasChannel()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			node, err := bcgo.GetNode()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			alias, err := aliasgo.RegisterAlias(aliases, node.Alias, node.Key)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println(alias)
+			publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
+			log.Println("Initialized")
 		case "node":
 			node, err := bcgo.GetNode()
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			log.Println(node)
+			log.Println(node.Alias)
+			publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
 		case "record":
 			if len(os.Args) > 3 {
 				channel := os.Args[2]
+				c, err := bcgo.OpenChannel(channel)
+				if err != nil {
+					log.Println(err)
+					return
+				}
 				hash, err := base64.RawURLEncoding.DecodeString(os.Args[3])
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				block, err := bcgo.GetBlock(&bcgo.Reference{
-					ChannelName: channel,
-					RecordHash:  hash,
-				})
+				block, err := c.GetBlock(hash)
+				if err != nil {
+					log.Println(err)
+					return
+				}
 				bcgo.PrintBlock(hash, block)
 			} else {
 				log.Println("Usage: record <channel-name> <record-hash>")
@@ -322,18 +308,50 @@ func main() {
 					log.Println(err)
 					return
 				}
-				log.Println(response)
+				switch response.StatusCode {
+				case http.StatusOK:
+					log.Println("Keys exported")
+				default:
+					log.Println("Export status:", response.Status)
+				}
 			} else {
 				log.Println("export-keys <alias>")
 			}
 		case "keystore":
-			log.Println(bcgo.GetKeyStore())
-		case "hosts":
-			log.Println(bcgo.GetHosts())
-		case "add-host":
-			log.Println(bcgo.AddHost(os.Args[2]))
+			keystore, err := bcgo.GetKeyStore()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println("KeyStore:", keystore)
+		case "peers":
+			if len(os.Args) > 2 {
+				channel := os.Args[2]
+				peers, err := bcgo.GetPeers(channel)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("Peers:", channel, peers)
+			}
+		case "add-peer":
+			if len(os.Args) > 3 {
+				channel := os.Args[2]
+				peer := os.Args[3]
+				err := bcgo.AddPeer(channel, peer)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("Added Peer:", channel, peer)
+			}
 		case "cache":
-			log.Println(bcgo.GetCache())
+			cache, err := bcgo.GetCache()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println("Cache:", cache)
 		case "random":
 			log.Println(bcgo.GenerateRandomKey())
 		default:
