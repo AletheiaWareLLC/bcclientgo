@@ -17,15 +17,10 @@
 package main
 
 import (
-	"crypto/x509"
 	"encoding/base64"
 	"github.com/AletheiaWareLLC/aliasgo"
 	"github.com/AletheiaWareLLC/bcgo"
-	"github.com/golang/protobuf/proto"
-	"io/ioutil"
 	"log"
-	"net/http"
-	"net/url"
 	"os"
 )
 
@@ -54,17 +49,7 @@ func main() {
 				}
 				log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
 			} else {
-				node, err := bcgo.GetNode()
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				alias, err := aliasgo.GetAlias(aliases, &node.Key.PublicKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println("Registered as", alias)
+				log.Println("Usage: alias [alias]")
 			}
 		case "block":
 			if len(os.Args) > 3 {
@@ -87,7 +72,7 @@ func main() {
 
 				bcgo.PrintBlock(hash, block)
 			} else {
-				log.Println("Usage: block <channel-name> <block-hash>")
+				log.Println("Usage: block [channel-name] [block-hash]")
 			}
 		case "head":
 			if len(os.Args) > 2 {
@@ -103,10 +88,10 @@ func main() {
 				}
 				log.Println("Head:", base64.RawURLEncoding.EncodeToString(head))
 			} else {
-				log.Println("Usage: head <channel-name>")
+				log.Println("Usage: head [channel-name]")
 			}
 		case "init":
-			if err := bcgo.AddPeer(aliasgo.ALIAS, bcgo.BC_HOST); err != nil {
+			if err := bcgo.AddPeer(bcgo.BC_HOST); err != nil {
 				log.Println(err)
 				return
 			}
@@ -167,7 +152,7 @@ func main() {
 				}
 				bcgo.PrintBlock(hash, block)
 			} else {
-				log.Println("Usage: record <channel-name> <record-hash>")
+				log.Println("Usage: record [channel-name] [record-hash]")
 			}
 		case "sync":
 			if len(os.Args) > 2 {
@@ -178,76 +163,24 @@ func main() {
 				}
 				log.Println(channel.Sync())
 			} else {
-				log.Println("Usage: sync <channel-name>")
+				log.Println("Usage: sync [channel-name]")
 			}
 		case "import-keys":
 			if len(os.Args) >= 4 {
 				alias := os.Args[2]
-				response, err := http.Get(bcgo.BC_WEBSITE + "/keys?alias=" + alias)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				data, err := ioutil.ReadAll(response.Body)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				keyShare := &bcgo.KeyShare{}
-				if err = proto.Unmarshal(data, keyShare); err != nil {
-					log.Println(err)
-					return
-				}
-				if keyShare.Alias != alias {
-					log.Println("Incorrect KeyShare Alias")
-					return
-				}
-				// Decode Access Code
-				accessCode, err := base64.RawURLEncoding.DecodeString(os.Args[3])
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				// Parse Public Key
-				/*
-					publicKey, err := bcgo.ParseRSAPublicKey(keyShare.PublicKey, keyShare.PublicFormat)
-					if err != nil {
-						log.Println(err)
-						return
-					}
-				*/
-				// Decrypt Private Key
-				decryptedPrivateKey, err := bcgo.DecryptAESGCM(accessCode, keyShare.PrivateKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				// Parse Private Key
-				privateKey, err := bcgo.ParseRSAPrivateKey(decryptedPrivateKey, keyShare.PrivateFormat)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				// Decrypt Password
-				decryptedPassword, err := bcgo.DecryptAESGCM(accessCode, keyShare.Password)
-				if err != nil {
-					log.Println(err)
-					return
-				}
+				accessCode := os.Args[3]
 				// Get KeyStore
 				keystore, err := bcgo.GetKeyStore()
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				// Write Private Key
-				if err := bcgo.WriteRSAPrivateKey(privateKey, keystore, alias, decryptedPassword); err != nil {
+				if err := bcgo.ImportKeys(keystore, alias, accessCode); err != nil {
 					log.Println(err)
 					return
 				}
-				log.Println("Keys imported")
 			} else {
-				log.Println("import-keys <alias> <access-code>")
+				log.Println("import-keys [alias] [access-code]")
 			}
 		case "export-keys":
 			if len(os.Args) >= 3 {
@@ -262,60 +195,14 @@ func main() {
 					log.Println(err)
 					return
 				}
-				privateKey, err := bcgo.GetRSAPrivateKey(keystore, alias, password)
+				accessCode, err := bcgo.ExportKeys(keystore, alias, password)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-
-				// Generate a random access code
-				accessCode, err := bcgo.GenerateRandomKey()
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println("Access Code:", base64.RawURLEncoding.EncodeToString(accessCode))
-
-				data, err := x509.MarshalPKCS8PrivateKey(privateKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				encryptedPrivateKeyBytes, err := bcgo.EncryptAESGCM(accessCode, data)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&privateKey.PublicKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				encryptedPassword, err := bcgo.EncryptAESGCM(accessCode, password)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				response, err := http.PostForm(bcgo.BC_WEBSITE+"/keys", url.Values{
-					"alias":            {alias},
-					"publicKey":        {base64.RawURLEncoding.EncodeToString(publicKeyBytes)},
-					"publicKeyFormat":  {"PKIX"},
-					"privateKey":       {base64.RawURLEncoding.EncodeToString(encryptedPrivateKeyBytes)},
-					"privateKeyFormat": {"PKCS8"},
-					"password":         {base64.RawURLEncoding.EncodeToString(encryptedPassword)},
-				})
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				switch response.StatusCode {
-				case http.StatusOK:
-					log.Println("Keys exported")
-				default:
-					log.Println("Export status:", response.Status)
-				}
+				log.Println("Access Code:", accessCode)
 			} else {
-				log.Println("export-keys <alias>")
+				log.Println("export-keys [alias]")
 			}
 		case "keystore":
 			keystore, err := bcgo.GetKeyStore()
@@ -325,25 +212,21 @@ func main() {
 			}
 			log.Println("KeyStore:", keystore)
 		case "peers":
-			if len(os.Args) > 2 {
-				channel := os.Args[2]
-				peers, err := bcgo.GetPeers(channel)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println("Peers:", channel, peers)
+			peers, err := bcgo.GetPeers()
+			if err != nil {
+				log.Println(err)
+				return
 			}
+			log.Println("Peers:", peers)
 		case "add-peer":
-			if len(os.Args) > 3 {
-				channel := os.Args[2]
-				peer := os.Args[3]
-				err := bcgo.AddPeer(channel, peer)
+			if len(os.Args) > 2 {
+				peer := os.Args[2]
+				err := bcgo.AddPeer(peer)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				log.Println("Added Peer:", channel, peer)
+				log.Println("Added Peer:", peer)
 			}
 		case "cache":
 			cache, err := bcgo.GetCache()
@@ -355,9 +238,29 @@ func main() {
 		case "random":
 			log.Println(bcgo.GenerateRandomKey())
 		default:
-			bcgo.GetAndPrintURL(bcgo.BC_WEBSITE)
+			log.Println("Cannot handle", os.Args[1])
 		}
 	} else {
-		bcgo.GetAndPrintURL(bcgo.BC_WEBSITE)
+		log.Println("BC Usage:")
+		log.Println("\tbc")
+		log.Println("\tbc init - initializes environment, generates key pair, and registers alias")
+
+		log.Println("\tbc sync [channel] - synchronizes cache for the given channel")
+		log.Println("\tbc head [channel] - display head of given channel")
+		log.Println("\tbc block [channel] [hash] - display block with given hash on given channel")
+		log.Println("\tbc record [channel] [hash] - display record with given hash on given channel")
+
+		log.Println("\tbc alias [alias] - display public key for alias")
+		log.Println("\tbc node - display registered alias and public key")
+
+		log.Println("\tbc import-keys [alias] [access-code] - imports the alias and keypair from BC server")
+		log.Println("\tbc export-keys [alias] - generates a new access code and exports the alias and keypair to BC server")
+
+		log.Println("\tbc cache - display location of cache")
+		log.Println("\tbc keystore - display location of keystore")
+		log.Println("\tbc peers - display list of peers")
+		log.Println("\tbc add-peer [host] - adds the given host to the list of peers")
+
+		log.Println("\tbc random - generate a random number")
 	}
 }
