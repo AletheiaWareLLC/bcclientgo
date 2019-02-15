@@ -165,6 +165,17 @@ func main() {
 			} else {
 				log.Println("Usage: sync [channel-name]")
 			}
+		case "purge":
+			cache, err := bcgo.GetCache()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if err := os.RemoveAll(cache); err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println("Cache purged")
 		case "import-keys":
 			if len(os.Args) >= 4 {
 				alias := os.Args[2]
@@ -256,10 +267,11 @@ func main() {
 		log.Println("\tbc import-keys [alias] [access-code] - imports the alias and keypair from BC server")
 		log.Println("\tbc export-keys [alias] - generates a new access code and exports the alias and keypair to BC server")
 
-		log.Println("\tbc cache - display location of cache")
-		log.Println("\tbc keystore - display location of keystore")
 		log.Println("\tbc peers - display list of peers")
 		log.Println("\tbc add-peer [host] - adds the given host to the list of peers")
+		log.Println("\tbc keystore - display location of keystore")
+		log.Println("\tbc cache - display location of cache")
+		log.Println("\tbc purge - deletes cache")
 
 		log.Println("\tbc random - generate a random number")
 	}
