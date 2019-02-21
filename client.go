@@ -145,7 +145,10 @@ func main() {
 					log.Println(err)
 					return
 				}
-				block, err := c.GetBlock(hash)
+				block, err := c.GetRemoteBlock(&bcgo.Reference{
+					ChannelName: c.Name,
+					RecordHash:  hash,
+				})
 				if err != nil {
 					log.Println(err)
 					return
@@ -164,6 +167,17 @@ func main() {
 				log.Println(channel.Sync())
 			} else {
 				log.Println("Usage: sync [channel-name]")
+			}
+		case "cast":
+			if len(os.Args) > 2 {
+				channel, err := bcgo.OpenChannel(os.Args[2])
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println(channel.Cast(channel.HeadHash, channel.HeadBlock))
+			} else {
+				log.Println("Usage: cast [channel-name]")
 			}
 		case "purge":
 			cache, err := bcgo.GetCache()
