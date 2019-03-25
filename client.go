@@ -108,6 +108,7 @@ func main() {
 			}
 			alias, err := aliasgo.RegisterAlias(aliases, node.Alias, node.Key)
 			if err != nil {
+				// TODO if alias can't be registered with server, mine locally
 				log.Println(err)
 				return
 			}
@@ -164,7 +165,11 @@ func main() {
 					log.Println(err)
 					return
 				}
-				log.Println(channel.Sync())
+				if err := channel.Sync(); err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("Channel synced")
 			} else {
 				log.Println("Usage: sync [channel-name]")
 			}
@@ -175,7 +180,11 @@ func main() {
 					log.Println(err)
 					return
 				}
-				log.Println(channel.Cast(channel.HeadHash, channel.HeadBlock))
+				if err := channel.Cast(channel.HeadHash, channel.HeadBlock); err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("Block casted")
 			} else {
 				log.Println("Usage: cast [channel-name]")
 			}
