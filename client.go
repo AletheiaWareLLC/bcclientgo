@@ -91,7 +91,7 @@ func main() {
 				log.Println("Usage: head [channel-name]")
 			}
 		case "init":
-			if err := bcgo.AddPeer(bcgo.BC_HOST); err != nil {
+			if err := bcgo.AddPeer(bcgo.GetBCHost()); err != nil {
 				log.Println(err)
 				return
 			}
@@ -106,7 +106,7 @@ func main() {
 				log.Println(err)
 				return
 			}
-			alias, err := aliasgo.RegisterAlias(aliases, node.Alias, node.Key)
+			alias, err := aliasgo.RegisterAlias(aliases, bcgo.GetBCWebsite(), node.Alias, node.Key)
 			if err != nil {
 				// TODO if alias can't be registered with server, mine locally
 				log.Println(err)
@@ -209,7 +209,7 @@ func main() {
 					log.Println(err)
 					return
 				}
-				if err := bcgo.ImportKeys(keystore, alias, accessCode); err != nil {
+				if err := bcgo.ImportKeys(bcgo.GetBCWebsite(), keystore, alias, accessCode); err != nil {
 					log.Println(err)
 					return
 				}
@@ -229,7 +229,7 @@ func main() {
 					log.Println(err)
 					return
 				}
-				accessCode, err := bcgo.ExportKeys(keystore, alias, password)
+				accessCode, err := bcgo.ExportKeys(bcgo.GetBCWebsite(), keystore, alias, password)
 				if err != nil {
 					log.Println(err)
 					return
