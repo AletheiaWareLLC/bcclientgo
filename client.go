@@ -184,7 +184,8 @@ func main() {
 					log.Println(err)
 					return
 				}
-				log.Println("Block casted")
+				log.Println("Head casted")
+				// TODO if peer doesn't have entire chain, cast it
 			} else {
 				log.Println("Usage: cast [channel-name]")
 			}
