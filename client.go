@@ -17,11 +17,13 @@
 package main
 
 import (
+	"crypto/rsa"
 	"encoding/base64"
 	"github.com/AletheiaWareLLC/aliasgo"
 	"github.com/AletheiaWareLLC/bcgo"
 	"log"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -120,6 +122,63 @@ func main() {
 			}
 			log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
 			log.Println("Initialized")
+		case "mine":
+			if len(os.Args) > 3 {
+				c, err := bcgo.OpenAndSyncChannel(os.Args[2])
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				threshold, err := strconv.Atoi(os.Args[3])
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				c.Threshold = uint64(threshold)
+
+				node, err := bcgo.GetNode()
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				acl := make(map[string]*rsa.PublicKey)
+				if len(os.Args) > 4 {
+					// Open Alias Channel
+					aliases, err := aliasgo.OpenAliasChannel()
+					if err != nil {
+						log.Println(err)
+						return
+					}
+					for _, a := range os.Args[4:] {
+						publicKey, err := aliasgo.GetPublicKey(aliases, os.Args[2])
+						if err != nil {
+							log.Println(err)
+							return
+						}
+						acl[a] = publicKey
+					}
+				}
+
+				// Read data from system in
+				reader := os.Stdin
+				log.Println("Reading from stdin, use CTRL-D to terminate")
+
+				size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, nil, reader, func(key []byte, record *bcgo.Record) error {
+					reference, err := node.MineRecord(c, record)
+					if err != nil {
+						return err
+					}
+					log.Println(reference)
+					return nil
+				})
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				log.Println("Mined", bcgo.SizeToString(uint64(size)))
+			}
 		case "node":
 			node, err := bcgo.GetNode()
 			if err != nil {
@@ -286,6 +345,7 @@ func main() {
 		log.Println("\tbc record [channel] [hash] - display record with given hash on given channel")
 
 		log.Println("\tbc alias [alias] - display public key for alias")
+		log.Println("\tbc mine [channel] [threshold] [access...] - reads data from stdin and mines it to the given threshold in the blockchain with the given name and grants access to the given aliases")
 		log.Println("\tbc node - display registered alias and public key")
 
 		log.Println("\tbc import-keys [alias] [access-code] - imports the alias and keypair from BC server")
