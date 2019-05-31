@@ -50,7 +50,7 @@ func (c *Client) Init() (*bcgo.Node, error) {
 
 	// Open Alias Channel
 	aliases := aliasgo.OpenAndLoadAliasChannel(c.Cache, c.Network)
-	if err := aliasgo.UniqueAlias(aliases, c.Cache, node.Network, node.Alias); err != nil {
+	if err := aliases.UniqueAlias(c.Cache, node.Alias); err != nil {
 		return nil, err
 	}
 	if err := aliasgo.RegisterAlias(bcgo.GetBCWebsite(), node.Alias, node.Key); err != nil {
@@ -65,7 +65,7 @@ func (c *Client) Alias(alias string) (string, error) {
 	// Open Alias Channel
 	aliases := aliasgo.OpenAndLoadAliasChannel(c.Cache, c.Network)
 	// Get Public Key for Alias
-	publicKey, err := aliasgo.GetPublicKey(aliases, c.Cache, c.Network, alias)
+	publicKey, err := aliases.GetPublicKey(c.Cache, alias)
 	if err != nil {
 		return "", err
 	}
@@ -126,7 +126,7 @@ func (c *Client) Mine(channel string, threshold uint64, accesses []string, input
 		// Open Alias Channel
 		aliases := aliasgo.OpenAndLoadAliasChannel(c.Cache, c.Network)
 		for _, a := range accesses {
-			publicKey, err := aliasgo.GetPublicKey(aliases, c.Cache, node.Network, a)
+			publicKey, err := aliases.GetPublicKey(c.Cache, a)
 			if err != nil {
 				return 0, nil, err
 			}
@@ -210,7 +210,7 @@ func (c *Client) Subscription(callback func(*financego.Subscription) error) erro
 		return err
 	}
 	subscriptions := financego.OpenAndLoadSubscriptionChannel(c.Cache, c.Network)
-	return financego.GetSubscriptionAsync(subscriptions, c.Cache, node.Alias, node.Key, node.Alias, callback)
+	return financego.GetSubscriptionAsync(subscriptions, c.Cache, node.Alias, node.Key, node.Alias, "", "", callback)
 }
 
 func (c *Client) Handle(args []string) {

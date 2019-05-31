@@ -37,19 +37,7 @@ func makeAlias(t *testing.T, cache bcgo.Cache, alias string) (*rsa.PrivateKey, *
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	testinggo.AssertNoError(t, err)
 
-	publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&privateKey.PublicKey)
-	testinggo.AssertNoError(t, err)
-	publicKeyFormat := bcgo.PublicKeyFormat_PKIX
-	hash, err := bcgo.HashProtobuf(&aliasgo.Alias{
-		Alias:        "Alice",
-		PublicKey:    publicKeyBytes,
-		PublicFormat: publicKeyFormat,
-	})
-	testinggo.AssertNoError(t, err)
-	signatureAlgorithm := bcgo.SignatureAlgorithm_SHA512WITHRSA_PSS
-	signature, err := bcgo.CreateSignature(privateKey, hash, signatureAlgorithm)
-	testinggo.AssertNoError(t, err)
-	record, err := aliasgo.CreateAliasRecord("Alice", publicKeyBytes, publicKeyFormat, signature, signatureAlgorithm)
+	record, err := aliasgo.CreateSignedAliasRecord(alias, privateKey)
 	testinggo.AssertNoError(t, err)
 
 	recordHash, err := bcgo.HashProtobuf(record)
@@ -79,9 +67,9 @@ func makeAlias(t *testing.T, cache bcgo.Cache, alias string) (*rsa.PrivateKey, *
 	return privateKey, record
 }
 
-func makeUser(t *testing.T, dir string) {
+func setAlias(t *testing.T, dir string) {
 	t.Helper()
-	alias := "Tester"
+	alias := "Alice"
 	password := "Password1234"
 	os.Setenv("ALIAS", alias)
 	os.Setenv("PASSWORD", password)
@@ -94,16 +82,23 @@ func makeUser(t *testing.T, dir string) {
 	}
 }
 
-func unmakeUser(t *testing.T) {
+func unsetAlias(t *testing.T) {
 	t.Helper()
 	os.Unsetenv("ALIAS")
 	os.Unsetenv("PASSWORD")
 }
 
 func TestClientInit(t *testing.T) {
-	// TODO set ROOT, ALIAS env
+	// TODO set ROOT_DIRECTORY, ALIAS env
 	/*
-		t.Run("TODO", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+		   root := testinggo.MakeEnvTempDir(t, "ROOT_DIRECTORY", "root")
+		   defer testinggo.UnmakeEnvTempDir(t, "ROOT_DIRECTORY", root)
+		   client := &main.Client{
+		       Root: root,
+		   }
+		   node, err := client.Init()
+		   testinggo.AssertNoError(t, err)
 		})
 		t.Run("AliasAlreadyRegistered", func(t *testing.T) {
 		})
@@ -225,8 +220,8 @@ func TestClientRecord(t *testing.T) {
 func TestClientMine(t *testing.T) {
 	t.Run("PublicEmpty", func(t *testing.T) {
 		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
-		makeUser(t, root)
-		defer unmakeUser(t)
+		setAlias(t, root)
+		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		client := &main.Client{
 			Root:  root,
@@ -242,8 +237,8 @@ func TestClientMine(t *testing.T) {
 	})
 	t.Run("PublicNotEmpty", func(t *testing.T) {
 		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
-		makeUser(t, root)
-		defer unmakeUser(t)
+		setAlias(t, root)
+		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		client := &main.Client{
 			Root:  root,
@@ -259,11 +254,11 @@ func TestClientMine(t *testing.T) {
 	})
 	t.Run("PrivateEmpty", func(t *testing.T) {
 		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
-		makeUser(t, root)
-		defer unmakeUser(t)
+		setAlias(t, root)
+		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		cache := bcgo.NewMemoryCache(2)
-		/*key, _ := */ makeAlias(t, cache, "Alice")
+		makeAlias(t, cache, "Alice")
 		client := &main.Client{
 			Root:  root,
 			Cache: cache,
@@ -278,8 +273,8 @@ func TestClientMine(t *testing.T) {
 	})
 	t.Run("PrivateNotEmpty", func(t *testing.T) {
 		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
-		makeUser(t, root)
-		defer unmakeUser(t)
+		setAlias(t, root)
+		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		cache := bcgo.NewMemoryCache(2)
 		/*key, _ := */ makeAlias(t, cache, "Alice")
