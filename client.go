@@ -195,22 +195,22 @@ func (c *Client) ExportKeys(alias string) (string, error) {
 	return bcgo.ExportKeys(bcgo.GetBCWebsite(), keystore, alias, password)
 }
 
-func (c *Client) Registration(callback func(*financego.Customer) error) error {
+func (c *Client) Registration(merchant string, callback func(*financego.Registration) error) error {
 	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
 		return err
 	}
-	customers := financego.OpenAndLoadCustomerChannel(c.Cache, c.Network)
-	return financego.GetCustomerAsync(customers, c.Cache, node.Alias, node.Key, node.Alias, callback)
+	registrations := financego.OpenAndLoadRegistrationChannel(c.Cache, c.Network)
+	return financego.GetRegistrationAsync(registrations, c.Cache, merchant, nil, node.Alias, node.Key, callback)
 }
 
-func (c *Client) Subscription(callback func(*financego.Subscription) error) error {
+func (c *Client) Subscription(merchant string, callback func(*financego.Subscription) error) error {
 	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
 		return err
 	}
 	subscriptions := financego.OpenAndLoadSubscriptionChannel(c.Cache, c.Network)
-	return financego.GetSubscriptionAsync(subscriptions, c.Cache, node.Alias, node.Key, node.Alias, "", "", callback)
+	return financego.GetSubscriptionAsync(subscriptions, c.Cache, merchant, nil, node.Alias, node.Key, "", "", callback)
 }
 
 func (c *Client) Handle(args []string) {
@@ -392,14 +392,13 @@ func (c *Client) Handle(args []string) {
 				log.Println("Usage: export-keys [alias]")
 			}
 		case "registration":
-			/* TODO add support for merchant
 			merchant := ""
 			if len(args) > 1 {
 				merchant = args[1]
-			}*/
+			}
 			count := 0
-			if err := c.Registration(func(c *financego.Customer) error {
-				log.Println(c)
+			if err := c.Registration(merchant, func(r *financego.Registration) error {
+				log.Println(r)
 				count++
 				return nil
 			}); err != nil {
@@ -408,13 +407,12 @@ func (c *Client) Handle(args []string) {
 			}
 			log.Println(count, "results")
 		case "subscription":
-			/* TODO add support for merchant
 			merchant := ""
 			if len(args) > 1 {
 				merchant = args[1]
-			}*/
+			}
 			count := 0
-			if err := c.Subscription(func(s *financego.Subscription) error {
+			if err := c.Subscription(merchant, func(s *financego.Subscription) error {
 				log.Println(s)
 				count++
 				return nil
