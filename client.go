@@ -49,21 +49,44 @@ func (c *Client) Init() (*bcgo.Node, error) {
 	}
 
 	// Open Alias Channel
-	aliases := aliasgo.OpenAndLoadAliasChannel(c.Cache, c.Network)
+	aliases := aliasgo.OpenAndPullAliasChannel(c.Cache, c.Network)
 	if err := aliases.UniqueAlias(c.Cache, node.Alias); err != nil {
 		return nil, err
 	}
 	if err := aliasgo.RegisterAlias(bcgo.GetBCWebsite(), node.Alias, node.Key); err != nil {
-		// TODO if alias can't be registered with server, mine locally
-		log.Println("Could not register alias: ", err)
-		return nil, err
+		log.Println("Could not register alias remotely: ", err)
+		log.Println("Registering locally")
+		// Create record
+		record, err := aliasgo.CreateSignedAliasRecord(node.Alias, node.Key)
+		if err != nil {
+			return nil, err
+		}
+
+		// Write record to cache
+		reference, err := bcgo.WriteRecord(aliasgo.ALIAS, node.Cache, record)
+		if err != nil {
+			return nil, err
+		}
+		log.Println("Wrote Record", base64.RawURLEncoding.EncodeToString(reference.RecordHash))
+
+		// Mine record into blockchain
+		hash, _, err := node.Mine(aliases, &bcgo.PrintingMiningListener{os.Stdout})
+		if err != nil {
+			return nil, err
+		}
+		log.Println("Mined Alias", base64.RawURLEncoding.EncodeToString(hash))
+
+		// Push update to peers
+		if err := bcgo.Push(aliases, node.Cache, node.Network); err != nil {
+			return nil, err
+		}
 	}
 	return node, nil
 }
 
 func (c *Client) Alias(alias string) (string, error) {
 	// Open Alias Channel
-	aliases := aliasgo.OpenAndLoadAliasChannel(c.Cache, c.Network)
+	aliases := aliasgo.OpenAndPullAliasChannel(c.Cache, c.Network)
 	// Get Public Key for Alias
 	publicKey, err := aliases.GetPublicKey(c.Cache, alias)
 	if err != nil {
@@ -124,7 +147,7 @@ func (c *Client) Mine(channel string, threshold uint64, accesses []string, input
 	acl := make(map[string]*rsa.PublicKey)
 	if len(accesses) > 0 {
 		// Open Alias Channel
-		aliases := aliasgo.OpenAndLoadAliasChannel(c.Cache, c.Network)
+		aliases := aliasgo.OpenAndPullAliasChannel(c.Cache, c.Network)
 		for _, a := range accesses {
 			publicKey, err := aliases.GetPublicKey(c.Cache, a)
 			if err != nil {
@@ -200,7 +223,7 @@ func (c *Client) Registration(merchant string, callback func(*financego.Registra
 	if err != nil {
 		return err
 	}
-	registrations := financego.OpenAndLoadRegistrationChannel(c.Cache, c.Network)
+	registrations := financego.OpenAndPullRegistrationChannel(c.Cache, c.Network)
 	return financego.GetRegistrationAsync(registrations, c.Cache, merchant, nil, node.Alias, node.Key, callback)
 }
 
@@ -209,7 +232,7 @@ func (c *Client) Subscription(merchant string, callback func(*financego.Subscrip
 	if err != nil {
 		return err
 	}
-	subscriptions := financego.OpenAndLoadSubscriptionChannel(c.Cache, c.Network)
+	subscriptions := financego.OpenAndPullSubscriptionChannel(c.Cache, c.Network)
 	return financego.GetSubscriptionAsync(subscriptions, c.Cache, merchant, nil, node.Alias, node.Key, "", "", callback)
 }
 
