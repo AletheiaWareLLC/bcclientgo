@@ -49,7 +49,13 @@ func (c *Client) Init() (*bcgo.Node, error) {
 	}
 
 	// Open Alias Channel
-	aliases := aliasgo.OpenAndPullAliasChannel(c.Cache, c.Network)
+	aliases := aliasgo.OpenAliasChannel()
+	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
+		return nil, err
+	}
+	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+		return nil, err
+	}
 	if err := aliases.UniqueAlias(c.Cache, node.Alias); err != nil {
 		return nil, err
 	}
@@ -86,7 +92,13 @@ func (c *Client) Init() (*bcgo.Node, error) {
 
 func (c *Client) Alias(alias string) (string, error) {
 	// Open Alias Channel
-	aliases := aliasgo.OpenAndPullAliasChannel(c.Cache, c.Network)
+	aliases := aliasgo.OpenAliasChannel()
+	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
+		return "", err
+	}
+	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+		return "", err
+	}
 	// Get Public Key for Alias
 	publicKey, err := aliases.GetPublicKey(c.Cache, alias)
 	if err != nil {
@@ -147,7 +159,13 @@ func (c *Client) Mine(channel string, threshold uint64, accesses []string, input
 	acl := make(map[string]*rsa.PublicKey)
 	if len(accesses) > 0 {
 		// Open Alias Channel
-		aliases := aliasgo.OpenAndPullAliasChannel(c.Cache, c.Network)
+		aliases := aliasgo.OpenAliasChannel()
+		if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
+			return 0, nil, err
+		}
+		if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+			return 0, nil, err
+		}
 		for _, a := range accesses {
 			publicKey, err := aliases.GetPublicKey(c.Cache, a)
 			if err != nil {
@@ -223,7 +241,13 @@ func (c *Client) Registration(merchant string, callback func(*financego.Registra
 	if err != nil {
 		return err
 	}
-	registrations := financego.OpenAndPullRegistrationChannel(c.Cache, c.Network)
+	registrations := financego.OpenRegistrationChannel()
+	if err := bcgo.LoadHead(registrations, c.Cache, c.Network); err != nil {
+		return err
+	}
+	if err := bcgo.Pull(registrations, c.Cache, c.Network); err != nil {
+		return err
+	}
 	return financego.GetRegistrationAsync(registrations, c.Cache, merchant, nil, node.Alias, node.Key, callback)
 }
 
@@ -232,7 +256,13 @@ func (c *Client) Subscription(merchant string, callback func(*financego.Subscrip
 	if err != nil {
 		return err
 	}
-	subscriptions := financego.OpenAndPullSubscriptionChannel(c.Cache, c.Network)
+	subscriptions := financego.OpenSubscriptionChannel()
+	if err := bcgo.LoadHead(subscriptions, c.Cache, c.Network); err != nil {
+		return err
+	}
+	if err := bcgo.Pull(subscriptions, c.Cache, c.Network); err != nil {
+		return err
+	}
 	return financego.GetSubscriptionAsync(subscriptions, c.Cache, merchant, nil, node.Alias, node.Key, "", "", callback)
 }
 
