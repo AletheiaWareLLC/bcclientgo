@@ -56,7 +56,7 @@ func (c *Client) Init() (*bcgo.Node, error) {
 	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
 		return nil, err
 	}
-	if err := aliases.UniqueAlias(c.Cache, node.Alias); err != nil {
+	if err := aliases.UniqueAlias(c.Cache, c.Network, node.Alias); err != nil {
 		return nil, err
 	}
 	if err := aliasgo.RegisterAlias(bcgo.GetBCWebsite(), node.Alias, node.Key); err != nil {
@@ -94,13 +94,13 @@ func (c *Client) Alias(alias string) (string, error) {
 	// Open Alias Channel
 	aliases := aliasgo.OpenAliasChannel()
 	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
-		return "", err
+		log.Println(err)
 	}
 	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
-		return "", err
+		log.Println(err)
 	}
 	// Get Public Key for Alias
-	publicKey, err := aliases.GetPublicKey(c.Cache, alias)
+	publicKey, err := aliases.GetPublicKey(c.Cache, c.Network, alias)
 	if err != nil {
 		return "", err
 	}
@@ -167,7 +167,7 @@ func (c *Client) Mine(channel string, threshold uint64, accesses []string, input
 			return 0, nil, err
 		}
 		for _, a := range accesses {
-			publicKey, err := aliases.GetPublicKey(c.Cache, a)
+			publicKey, err := aliases.GetPublicKey(c.Cache, c.Network, a)
 			if err != nil {
 				return 0, nil, err
 			}
@@ -248,7 +248,7 @@ func (c *Client) Registration(merchant string, callback func(*financego.Registra
 	if err := bcgo.Pull(registrations, c.Cache, c.Network); err != nil {
 		return err
 	}
-	return financego.GetRegistrationAsync(registrations, c.Cache, merchant, nil, node.Alias, node.Key, callback)
+	return financego.GetRegistrationAsync(registrations, c.Cache, c.Network, merchant, nil, node.Alias, node.Key, callback)
 }
 
 func (c *Client) Subscription(merchant string, callback func(*financego.Subscription) error) error {
@@ -263,7 +263,7 @@ func (c *Client) Subscription(merchant string, callback func(*financego.Subscrip
 	if err := bcgo.Pull(subscriptions, c.Cache, c.Network); err != nil {
 		return err
 	}
-	return financego.GetSubscriptionAsync(subscriptions, c.Cache, merchant, nil, node.Alias, node.Key, "", "", callback)
+	return financego.GetSubscriptionAsync(subscriptions, c.Cache, c.Network, merchant, nil, node.Alias, node.Key, "", "", callback)
 }
 
 func (c *Client) Handle(args []string) {
