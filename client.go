@@ -145,17 +145,7 @@ func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
 	return nil, errors.New("Could not find record in block received from network")
 }
 
-func (c *Client) Mine(channel string, threshold uint64, accesses []string, input io.Reader, listener bcgo.MiningListener) (int, []byte, error) {
-	ch := &bcgo.PoWChannel{
-		Name:      channel,
-		Threshold: threshold,
-	}
-
-	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
-	if err != nil {
-		return 0, nil, err
-	}
-
+func (c *Client) Mine(channel string, accesses []string, input io.Reader) (int, error) {
 	acl := make(map[string]*rsa.PublicKey)
 	if len(accesses) > 0 {
 		// Open Alias Channel
@@ -169,25 +159,42 @@ func (c *Client) Mine(channel string, threshold uint64, accesses []string, input
 		for _, a := range accesses {
 			publicKey, err := aliases.GetPublicKey(c.Cache, c.Network, a)
 			if err != nil {
-				return 0, nil, err
+				return 0, err
 			}
 			acl[a] = publicKey
 		}
 	}
 
-	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, nil, input, func(key []byte, record *bcgo.Record) error {
-		_, err := bcgo.WriteRecord(ch.GetName(), c.Cache, record)
-		return err
-	})
+	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
 		return 0, nil, err
 	}
 
-	hash, _, err := node.Mine(ch, listener)
+	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, nil, input, func(key []byte, record *bcgo.Record) error {
+		_, err := bcgo.WriteRecord(channel, c.Cache, record)
+		return err
+	})
 	if err != nil {
-		return 0, nil, err
+		return 0, err
 	}
-	return size, hash, nil
+
+	return size, nil
+}
+
+func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningListener) ([]byte, error) {
+	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	if err != nil {
+		return nil, err
+	}
+
+	hash, _, err := node.Mine(&bcgo.PoWChannel{
+		Name:      channel,
+		Threshold: threshold,
+	}, listener)
+	if err != nil {
+		return nil, err
+	}
+	return hash, nil
 }
 
 func (c *Client) Pull(channel string) error {
@@ -302,6 +309,21 @@ func (c *Client) Handle(args []string) {
 			} else {
 				log.Println("Usage: alias [alias]")
 			}
+		case "write":
+			if len(args) > 2 {
+				var acl []string
+				if len(args) > 2 {
+					acl = args[2:]
+				}
+				size, err := c.Write(args[1], acl, os.Stdin)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("Wrote", bcgo.SizeToString(uint64(size)))
+			} else {
+				log.Println("Usage: write [channel-name] [access...]")
+			}
 		case "mine":
 			if len(args) > 2 {
 				threshold, err := strconv.Atoi(args[2])
@@ -309,19 +331,14 @@ func (c *Client) Handle(args []string) {
 					log.Println(err)
 					return
 				}
-				var acl []string
-				if len(args) > 3 {
-					acl = args[3:]
-				}
-				size, hash, err := c.Mine(args[1], uint64(threshold), acl, os.Stdin, &bcgo.PrintingMiningListener{os.Stdout})
+				hash, err := c.Mine(args[1], uint64(threshold), &bcgo.PrintingMiningListener{os.Stdout})
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				log.Println("Payload", bcgo.SizeToString(uint64(size)))
 				log.Println("Mined", base64.RawURLEncoding.EncodeToString(hash))
 			} else {
-				log.Println("Usage: mine [channel-name] [threshold] [access...]")
+				log.Println("Usage: mine [channel-name] [threshold]")
 			}
 		case "head":
 			if len(args) > 1 {
@@ -505,8 +522,8 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tbc block [channel] [hash] - display block with given hash")
 	fmt.Fprintln(output, "\tbc record [channel] [hash] - display record with given hash")
 	fmt.Fprintln(output)
-	// TODO split into a) write to cache, b) mine channel - fmt.Fprintln(output, "\tbc write [channel] [access...] - reads data from stdin and writes it to the given channel and grants access to the given aliases")
-	fmt.Fprintln(output, "\tbc mine [channel] [threshold] [access...] - reads data from stdin and mines it to the given threshold in the blockchain with the given channel and grants access to the given aliases")
+	fmt.Fprintln(output, "\tbc write [channel] [access...] - reads data from stdin and writes it to cache for the given channel and grants access to the given aliases")
+	fmt.Fprintln(output, "\tbc mine [channel] [threshold] - mines the given channel to the given threshold")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc peers - display list of peers")
 	fmt.Fprintln(output, "\tbc add-peer [host] - adds the given host to the list of peers")
