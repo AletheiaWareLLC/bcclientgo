@@ -217,7 +217,7 @@ func TestClientRecord(t *testing.T) {
 	*/
 }
 
-func TestClientMine(t *testing.T) {
+func TestClientWrite(t *testing.T) {
 	t.Run("PublicEmpty", func(t *testing.T) {
 		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
 		setAlias(t, root)
@@ -228,12 +228,11 @@ func TestClientMine(t *testing.T) {
 			Cache: bcgo.NewMemoryCache(2),
 		}
 		buffer := &bytes.Buffer{}
-		size, _, err := client.Mine("Test", 1, nil, buffer, nil)
+		size, err := client.Write("Test", nil, buffer)
 		testinggo.AssertNoError(t, err)
 		if size != 0 {
 			t.Fatalf("Incorrect size; expected '%d', got '%d'", 0, size)
 		}
-		// TODO test channel head points to block containing expected payload
 	})
 	t.Run("PublicNotEmpty", func(t *testing.T) {
 		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
@@ -245,12 +244,11 @@ func TestClientMine(t *testing.T) {
 			Cache: bcgo.NewMemoryCache(2),
 		}
 		buffer := bytes.NewBufferString("FooBar123")
-		size, _, err := client.Mine("Test", 1, nil, buffer, nil)
+		size, err := client.Write("Test", nil, buffer)
 		testinggo.AssertNoError(t, err)
 		if size != 9 {
 			t.Fatalf("Incorrect size; expected '%d', got '%d'", 9, size)
 		}
-		// TODO test channel head points to block containing expected payload
 	})
 	t.Run("PrivateEmpty", func(t *testing.T) {
 		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
@@ -264,12 +262,11 @@ func TestClientMine(t *testing.T) {
 			Cache: cache,
 		}
 		buffer := &bytes.Buffer{}
-		size, _, err := client.Mine("Test", 1, []string{"Alice"}, buffer, nil)
+		size, err := client.Write("Test", []string{"Alice"}, buffer)
 		testinggo.AssertNoError(t, err)
 		if size != 0 {
 			t.Fatalf("Incorrect size; expected '%d', got '%d'", 0, size)
 		}
-		// TODO test channel head points to block containing expected payload
 	})
 	t.Run("PrivateNotEmpty", func(t *testing.T) {
 		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
@@ -283,11 +280,98 @@ func TestClientMine(t *testing.T) {
 			Cache: cache,
 		}
 		buffer := bytes.NewBufferString("FooBar123")
-		size, _, err := client.Mine("Test", 1, []string{"Alice"}, buffer, nil)
+		size, err := client.Write("Test", []string{"Alice"}, buffer)
 		testinggo.AssertNoError(t, err)
 		if size != 9 {
 			t.Fatalf("Incorrect size; expected '%d', got '%d'", 9, size)
 		}
-		// TODO test channel head points to block containing expected payload
+	})
+}
+
+func TestClientMine(t *testing.T) {
+	t.Run("NoEntries", func(t *testing.T) {
+		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
+		setAlias(t, root)
+		defer unsetAlias(t)
+		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
+		client := &main.Client{
+			Root:  root,
+			Cache: bcgo.NewMemoryCache(2),
+		}
+		_, err := client.Mine("Test", 1, nil)
+		testinggo.AssertError(t, fmt.Sprintf(bcgo.ERROR_NO_ENTRIES_TO_MINE, "Test"), err)
+	})
+	t.Run("SingleEntry", func(t *testing.T) {
+		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
+		setAlias(t, root)
+		defer unsetAlias(t)
+		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
+		client := &main.Client{
+			Root:  root,
+			Cache: bcgo.NewMemoryCache(2),
+		}
+
+		record := &bcgo.Record{
+			Timestamp: 1234,
+		}
+
+		recordHash, err := bcgo.HashProtobuf(record)
+		testinggo.AssertNoError(t, err)
+
+		client.Cache.PutBlockEntry("Test", &bcgo.BlockEntry{
+			Record:     record,
+			RecordHash: recordHash,
+		})
+
+		hash, err := client.Mine("Test", 1, nil)
+		testinggo.AssertNoError(t, err)
+
+		head, err := client.Head("Test")
+		testinggo.AssertNoError(t, err)
+
+		testinggo.AssertHashEqual(t, head, hash)
+	})
+	t.Run("MultipleEntries", func(t *testing.T) {
+		root := testinggo.MakeEnvTempDir(t, "ROOT", "root")
+		setAlias(t, root)
+		defer unsetAlias(t)
+		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
+		cache := bcgo.NewMemoryCache(2)
+		client := &main.Client{
+			Root:  root,
+			Cache: cache,
+		}
+
+		record1 := &bcgo.Record{
+			Timestamp: 1234,
+		}
+
+		recordHash1, err := bcgo.HashProtobuf(record1)
+		testinggo.AssertNoError(t, err)
+
+		client.Cache.PutBlockEntry("Test", &bcgo.BlockEntry{
+			Record:     record1,
+			RecordHash: recordHash1,
+		})
+
+		record2 := &bcgo.Record{
+			Timestamp: 5678,
+		}
+
+		recordHash2, err := bcgo.HashProtobuf(record2)
+		testinggo.AssertNoError(t, err)
+
+		client.Cache.PutBlockEntry("Test", &bcgo.BlockEntry{
+			Record:     record2,
+			RecordHash: recordHash2,
+		})
+
+		hash, err := client.Mine("Test", 1, nil)
+		testinggo.AssertNoError(t, err)
+
+		head, err := client.Head("Test")
+		testinggo.AssertNoError(t, err)
+
+		testinggo.AssertHashEqual(t, head, hash)
 	})
 }

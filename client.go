@@ -116,7 +116,7 @@ func (c *Client) Head(channel string) ([]byte, error) {
 		Name: channel,
 	}
 	if err := bcgo.LoadHead(ch, c.Cache, c.Network); err != nil {
-		log.Println(err)
+		return nil, err
 	}
 	return ch.GetHead(), nil
 }
@@ -145,7 +145,7 @@ func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
 	return nil, errors.New("Could not find record in block received from network")
 }
 
-func (c *Client) Mine(channel string, accesses []string, input io.Reader) (int, error) {
+func (c *Client) Write(channel string, accesses []string, input io.Reader) (int, error) {
 	acl := make(map[string]*rsa.PublicKey)
 	if len(accesses) > 0 {
 		// Open Alias Channel
@@ -167,7 +167,7 @@ func (c *Client) Mine(channel string, accesses []string, input io.Reader) (int, 
 
 	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
-		return 0, nil, err
+		return 0, err
 	}
 
 	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, nil, input, func(key []byte, record *bcgo.Record) error {
