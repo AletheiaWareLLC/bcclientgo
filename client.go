@@ -270,6 +270,7 @@ func (c *Client) Handle(args []string) {
 	if len(args) > 0 {
 		switch args[0] {
 		case "init":
+			PrintLegalese(os.Stdout)
 			node, err := c.Init()
 			if err != nil {
 				log.Println(err)
@@ -514,6 +515,12 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tbc purge - deletes cache")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc random - generate a random number")
+}
+
+func PrintLegalese(output io.Writer) {
+	fmt.Fprintln(output, "BC Legalese:")
+	fmt.Fprintln(output, "BC is made available by Aletheia Ware LLC [https://aletheiaware.com] under the Terms of Service [https://aletheiaware.com/terms-of-service.html] and Privacy Policy [https://aletheiaware.com/privacy-policy.html].")
+	fmt.Fprintln(output, "By continuing to use this software you agree to the Terms of Service, and Privacy Policy.")
 }
 
 func PrintNode(output io.Writer, node *bcgo.Node) error {
