@@ -52,8 +52,7 @@ func (c *Client) Init() (*bcgo.Node, error) {
 	aliases := aliasgo.OpenAliasChannel()
 	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	if err := aliases.UniqueAlias(c.Cache, c.Network, node.Alias); err != nil {
@@ -95,8 +94,7 @@ func (c *Client) Alias(alias string) (string, error) {
 	aliases := aliasgo.OpenAliasChannel()
 	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	// Get Public Key for Alias
@@ -152,8 +150,7 @@ func (c *Client) Write(channel string, accesses []string, input io.Reader) (int,
 		aliases := aliasgo.OpenAliasChannel()
 		if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
 			log.Println(err)
-		}
-		if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+		} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
 			log.Println(err)
 		}
 		for _, a := range accesses {
@@ -251,8 +248,7 @@ func (c *Client) Registration(merchant string, callback func(*financego.Registra
 	registrations := financego.OpenRegistrationChannel()
 	if err := bcgo.LoadHead(registrations, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(registrations, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(registrations, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return financego.GetRegistrationAsync(registrations, c.Cache, c.Network, merchant, nil, node.Alias, node.Key, callback)
@@ -266,8 +262,7 @@ func (c *Client) Subscription(merchant string, callback func(*financego.Subscrip
 	subscriptions := financego.OpenSubscriptionChannel()
 	if err := bcgo.LoadHead(subscriptions, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(subscriptions, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(subscriptions, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return financego.GetSubscriptionAsync(subscriptions, c.Cache, c.Network, merchant, nil, node.Alias, node.Key, "", "", callback)
