@@ -152,10 +152,16 @@ func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningList
 		return nil, err
 	}
 
-	hash, _, err := node.Mine(&bcgo.PoWChannel{
+	ch := &bcgo.PoWChannel{
 		Name:      channel,
 		Threshold: threshold,
-	}, listener)
+	}
+
+	if err := bcgo.LoadHead(ch, c.Cache, c.Network); err != nil {
+		return nil, err
+	}
+
+	hash, _, err := node.Mine(ch, listener)
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +178,9 @@ func (c *Client) Pull(channel string) error {
 func (c *Client) Push(channel string) error {
 	ch := &bcgo.PoWChannel{
 		Name: channel,
+	}
+	if err := bcgo.LoadHead(ch, c.Cache, nil); err != nil {
+		return err
 	}
 	return bcgo.Push(ch, c.Cache, c.Network)
 }
