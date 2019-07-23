@@ -168,21 +168,21 @@ func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningList
 	return hash, nil
 }
 
-func (c *Client) Pull(channel string) error {
+func (c *Client) Pull(channel string, network Network) error {
 	ch := &bcgo.PoWChannel{
 		Name: channel,
 	}
-	return bcgo.Pull(ch, c.Cache, c.Network)
+	return bcgo.Pull(ch, c.Cache, network)
 }
 
-func (c *Client) Push(channel string) error {
+func (c *Client) Push(channel string, network Network) error {
 	ch := &bcgo.PoWChannel{
 		Name: channel,
 	}
 	if err := bcgo.LoadHead(ch, c.Cache, nil); err != nil {
 		return err
 	}
-	return bcgo.Push(ch, c.Cache, c.Network)
+	return bcgo.Push(ch, c.Cache, network)
 }
 
 func (c *Client) Purge() error {
@@ -194,16 +194,16 @@ func (c *Client) Purge() error {
 	return os.RemoveAll(dir)
 }
 
-func (c *Client) ImportKeys(alias, accessCode string) error {
+func (c *Client) ImportKeys(alias, accessCode, peer string) error {
 	// Get KeyStore
 	keystore, err := bcgo.GetKeyDirectory(c.Root)
 	if err != nil {
 		return err
 	}
-	return bcgo.ImportKeys(bcgo.GetBCWebsite(), keystore, alias, accessCode)
+	return bcgo.ImportKeys(peer, keystore, alias, accessCode)
 }
 
-func (c *Client) ExportKeys(alias string) (string, error) {
+func (c *Client) ExportKeys(alias, peer string) (string, error) {
 	// Get KeyStore
 	keystore, err := bcgo.GetKeyDirectory(c.Root)
 	if err != nil {
@@ -214,7 +214,7 @@ func (c *Client) ExportKeys(alias string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return bcgo.ExportKeys(bcgo.GetBCWebsite(), keystore, alias, password)
+	return bcgo.ExportKeys(peer, keystore, alias, password)
 }
 
 func (c *Client) Registration(merchant string, callback func(*financego.Registration) error) error {
@@ -357,7 +357,11 @@ func (c *Client) Handle(args []string) {
 			}
 		case "pull":
 			if len(args) > 1 {
-				if err := c.Pull(args[1]); err != nil {
+				network := c.Network
+				if len(args) > 2 {
+					network = &bcgo.TcpNetwork{args[2:]}
+				}
+				if err := c.Pull(args[1], network); err != nil {
 					log.Println(err)
 					return
 				}
@@ -367,7 +371,11 @@ func (c *Client) Handle(args []string) {
 			}
 		case "push":
 			if len(args) > 1 {
-				if err := c.Push(args[1]); err != nil {
+				network := c.Network
+				if len(args) > 2 {
+					network = &bcgo.TcpNetwork{args[2:]}
+				}
+				if err := c.Push(args[1], network); err != nil {
 					log.Println(err)
 					return
 				}
@@ -414,6 +422,10 @@ func (c *Client) Handle(args []string) {
 			}
 		case "import-keys":
 			if len(args) > 2 {
+				peer := bcgo.GetBCWebsite()
+				if len(args) > 3 {
+					peer = args[3]
+				}
 				if err := c.ImportKeys(args[1], args[2]); err != nil {
 					log.Println(err)
 					return
@@ -424,6 +436,10 @@ func (c *Client) Handle(args []string) {
 			}
 		case "export-keys":
 			if len(args) > 1 {
+				peer := bcgo.GetBCWebsite()
+				if len(args) > 2 {
+					peer = args[2]
+				}
 				accessCode, err := c.ExportKeys(args[1])
 				if err != nil {
 					log.Println(err)
@@ -480,16 +496,20 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tbc init - initializes environment, generates key pair, and registers alias")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc node - display registered alias and public key")
-	fmt.Fprintln(output, "\tbc alias [alias] - display public key for alias")
+	fmt.Fprintln(output, "\tbc alias [alias] - display public key for given alias")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc import-keys [alias] [access-code] - imports the alias and keypair from BC server")
+	fmt.Fprintln(output, "\tbc import-keys [alias] [access-code] [peer] - imports the alias and keypair from the given peer")
 	fmt.Fprintln(output, "\tbc export-keys [alias] - generates a new access code and exports the alias and keypair to BC server")
+	fmt.Fprintln(output, "\tbc export-keys [alias] [peer] - generates a new access code and exports the alias and keypair to the given peer")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc registration [merchant] - display registration information between this alias and the given merchant")
 	fmt.Fprintln(output, "\tbc subscription [merchant] - display subscription information between this alias and the given merchant")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc push [channel] - pushes the channel to peers")
+	fmt.Fprintln(output, "\tbc push [channel] [peer] - pushes the channel to the given peer")
 	fmt.Fprintln(output, "\tbc pull [channel] - pulles the channel from peers")
+	fmt.Fprintln(output, "\tbc pull [channel] [peer] - pulles the channel from the given peer")
 	fmt.Fprintln(output, "\tbc head [channel] - display head of given channel")
 	fmt.Fprintln(output, "\tbc block [channel] [hash] - display block with given hash")
 	fmt.Fprintln(output, "\tbc record [channel] [hash] - display record with given hash")
@@ -498,10 +518,10 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tbc mine [channel] [threshold] - mines the given channel to the given threshold")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc peers - display list of peers")
-	fmt.Fprintln(output, "\tbc add-peer [host] - adds the given host to the list of peers")
+	fmt.Fprintln(output, "\tbc add-peer [peer] - adds the given peer to the list of peers")
 	fmt.Fprintln(output, "\tbc keystore - display location of keystore")
 	fmt.Fprintln(output, "\tbc cache - display location of cache")
-	fmt.Fprintln(output, "\tbc purge - deletes cache")
+	fmt.Fprintln(output, "\tbc purge - deletes contents of cache")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc random - generate a random number")
 }
