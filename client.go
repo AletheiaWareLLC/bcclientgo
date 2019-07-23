@@ -158,7 +158,7 @@ func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningList
 	}
 
 	if err := bcgo.LoadHead(ch, c.Cache, c.Network); err != nil {
-		return nil, err
+		log.Println(err)
 	}
 
 	hash, _, err := node.Mine(ch, listener)
