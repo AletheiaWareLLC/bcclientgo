@@ -168,14 +168,14 @@ func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningList
 	return hash, nil
 }
 
-func (c *Client) Pull(channel string, network Network) error {
+func (c *Client) Pull(channel string, network bcgo.Network) error {
 	ch := &bcgo.PoWChannel{
 		Name: channel,
 	}
 	return bcgo.Pull(ch, c.Cache, network)
 }
 
-func (c *Client) Push(channel string, network Network) error {
+func (c *Client) Push(channel string, network bcgo.Network) error {
 	ch := &bcgo.PoWChannel{
 		Name: channel,
 	}
@@ -194,7 +194,7 @@ func (c *Client) Purge() error {
 	return os.RemoveAll(dir)
 }
 
-func (c *Client) ImportKeys(alias, accessCode, peer string) error {
+func (c *Client) ImportKeys(peer, alias, accessCode string) error {
 	// Get KeyStore
 	keystore, err := bcgo.GetKeyDirectory(c.Root)
 	if err != nil {
@@ -203,7 +203,7 @@ func (c *Client) ImportKeys(alias, accessCode, peer string) error {
 	return bcgo.ImportKeys(peer, keystore, alias, accessCode)
 }
 
-func (c *Client) ExportKeys(alias, peer string) (string, error) {
+func (c *Client) ExportKeys(peer, alias string) (string, error) {
 	// Get KeyStore
 	keystore, err := bcgo.GetKeyDirectory(c.Root)
 	if err != nil {
@@ -426,7 +426,7 @@ func (c *Client) Handle(args []string) {
 				if len(args) > 3 {
 					peer = args[3]
 				}
-				if err := c.ImportKeys(args[1], args[2]); err != nil {
+				if err := c.ImportKeys(peer, args[1], args[2]); err != nil {
 					log.Println(err)
 					return
 				}
@@ -440,7 +440,7 @@ func (c *Client) Handle(args []string) {
 				if len(args) > 2 {
 					peer = args[2]
 				}
-				accessCode, err := c.ExportKeys(args[1])
+				accessCode, err := c.ExportKeys(peer, args[1])
 				if err != nil {
 					log.Println(err)
 					return
