@@ -96,10 +96,7 @@ func (c *Client) Block(channel string, hash []byte) (*bcgo.Block, error) {
 }
 
 func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
-	block, err := c.Network.GetBlock(&bcgo.Reference{
-		ChannelName: channel,
-		RecordHash:  hash,
-	})
+	block, err := bcgo.GetBlockContainingRecord(channel, c.Cache, c.Network, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +105,7 @@ func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
 			return entry.Record, nil
 		}
 	}
-	return nil, errors.New("Could not find record in block received from network")
+	return nil, errors.New("Could not get block containing record")
 }
 
 func (c *Client) Write(channel string, accesses []string, input io.Reader) (int, error) {
