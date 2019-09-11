@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"github.com/AletheiaWareLLC/aliasgo"
 	"github.com/AletheiaWareLLC/bcgo"
-	"github.com/AletheiaWareLLC/financego"
 	"io"
 	"log"
 	"os"
@@ -212,34 +211,6 @@ func (c *Client) ExportKeys(peer, alias string) (string, error) {
 		return "", err
 	}
 	return bcgo.ExportKeys(peer, keystore, alias, password)
-}
-
-func (c *Client) Registration(merchant string, callback func(*financego.Registration) error) error {
-	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
-	if err != nil {
-		return err
-	}
-	registrations := financego.OpenRegistrationChannel()
-	if err := bcgo.LoadHead(registrations, c.Cache, c.Network); err != nil {
-		log.Println(err)
-	} else if err := bcgo.Pull(registrations, c.Cache, c.Network); err != nil {
-		log.Println(err)
-	}
-	return financego.GetRegistrationAsync(registrations, c.Cache, c.Network, merchant, nil, node.Alias, node.Key, callback)
-}
-
-func (c *Client) Subscription(merchant string, callback func(*financego.Subscription) error) error {
-	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
-	if err != nil {
-		return err
-	}
-	subscriptions := financego.OpenSubscriptionChannel()
-	if err := bcgo.LoadHead(subscriptions, c.Cache, c.Network); err != nil {
-		log.Println(err)
-	} else if err := bcgo.Pull(subscriptions, c.Cache, c.Network); err != nil {
-		log.Println(err)
-	}
-	return financego.GetSubscriptionAsync(subscriptions, c.Cache, c.Network, merchant, nil, node.Alias, node.Key, "", "", callback)
 }
 
 func (c *Client) Handle(args []string) {
@@ -447,36 +418,6 @@ func (c *Client) Handle(args []string) {
 			} else {
 				log.Println("Usage: export-keys [alias]")
 			}
-		case "registration":
-			merchant := ""
-			if len(args) > 1 {
-				merchant = args[1]
-			}
-			count := 0
-			if err := c.Registration(merchant, func(r *financego.Registration) error {
-				log.Println(r)
-				count++
-				return nil
-			}); err != nil {
-				log.Println(err)
-				return
-			}
-			log.Println(count, "results")
-		case "subscription":
-			merchant := ""
-			if len(args) > 1 {
-				merchant = args[1]
-			}
-			count := 0
-			if err := c.Subscription(merchant, func(s *financego.Subscription) error {
-				log.Println(s)
-				count++
-				return nil
-			}); err != nil {
-				log.Println(err)
-				return
-			}
-			log.Println(count, "results")
 		case "random":
 			log.Println(bcgo.GenerateRandomKey())
 		default:
@@ -499,9 +440,6 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tbc import-keys [alias] [access-code] [peer] - imports the alias and keypair from the given peer")
 	fmt.Fprintln(output, "\tbc export-keys [alias] - generates a new access code and exports the alias and keypair to BC server")
 	fmt.Fprintln(output, "\tbc export-keys [alias] [peer] - generates a new access code and exports the alias and keypair to the given peer")
-	fmt.Fprintln(output)
-	fmt.Fprintln(output, "\tbc registration [merchant] - display registration information between this alias and the given merchant")
-	fmt.Fprintln(output, "\tbc subscription [merchant] - display subscription information between this alias and the given merchant")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc push [channel] - pushes the channel to peers")
 	fmt.Fprintln(output, "\tbc push [channel] [peer] - pushes the channel to the given peer")
