@@ -18,7 +18,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/rsa"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -108,23 +107,14 @@ func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
 }
 
 func (c *Client) Write(channel string, accesses []string, input io.Reader) (int, error) {
-	acl := make(map[string]*rsa.PublicKey)
-	if len(accesses) > 0 {
-		// Open Alias Channel
-		aliases := aliasgo.OpenAliasChannel()
-		if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
-			log.Println(err)
-		} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
-			log.Println(err)
-		}
-		for _, a := range accesses {
-			publicKey, err := aliases.GetPublicKey(c.Cache, c.Network, a)
-			if err != nil {
-				return 0, err
-			}
-			acl[a] = publicKey
-		}
+	// Open Alias Channel
+	aliases := aliasgo.OpenAliasChannel()
+	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
+		log.Println(err)
+	} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+		log.Println(err)
 	}
+	acl := aliases.GetPublicKeys(c.Cache, c.Network, accesses)
 
 	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
