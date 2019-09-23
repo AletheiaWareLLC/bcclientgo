@@ -250,7 +250,7 @@ func (c *Client) Handle(args []string) {
 					log.Println(err)
 					return
 				}
-				log.Println("Wrote", bcgo.SizeToString(uint64(size)))
+				log.Println("Wrote", bcgo.BinarySizeToString(uint64(size)))
 			} else {
 				log.Println("Usage: write [channel-name] [access...]")
 			}
