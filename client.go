@@ -58,9 +58,10 @@ func (c *Client) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 func (c *Client) Alias(alias string) (string, error) {
 	// Open Alias Channel
 	aliases := aliasgo.OpenAliasChannel()
-	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
+	if err := bcgo.LoadCachedHead(aliases, c.Cache); err != nil {
 		log.Println(err)
-	} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+	}
+	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	// Get Public Key for Alias
@@ -109,9 +110,10 @@ func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
 func (c *Client) Write(channel string, accesses []string, input io.Reader) (int, error) {
 	// Open Alias Channel
 	aliases := aliasgo.OpenAliasChannel()
-	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
+	if err := bcgo.LoadCachedHead(aliases, c.Cache); err != nil {
 		log.Println(err)
-	} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+	}
+	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	acl := aliases.GetPublicKeys(c.Cache, c.Network, accesses)
