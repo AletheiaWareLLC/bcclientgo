@@ -18,7 +18,7 @@ set -e
 set -x
 
 go fmt $GOPATH/src/github.com/AletheiaWareLLC/*
-go test $GOPATH/src/github.com/AletheiaWareLLC/* || true
+go test $GOPATH/src/github.com/AletheiaWareLLC/{aliasgo,bcgo,bcclientgo,financego}
 env GOOS=darwin GOARCH=386 go build -o $GOPATH/bin/bcclientgo-darwin-386 github.com/AletheiaWareLLC/bcclientgo
 env GOOS=darwin GOARCH=amd64 go build -o $GOPATH/bin/bcclientgo-darwin-amd64 github.com/AletheiaWareLLC/bcclientgo
 env GOOS=linux GOARCH=386 go build -o $GOPATH/bin/bcclientgo-linux-386 github.com/AletheiaWareLLC/bcclientgo
