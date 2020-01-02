@@ -59,14 +59,14 @@ func (c *Client) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 func (c *Client) Alias(alias string) (string, error) {
 	// Open Alias Channel
 	aliases := aliasgo.OpenAliasChannel()
-	if err := bcgo.LoadCachedHead(aliases, c.Cache); err != nil {
+	if err := aliases.LoadCachedHead(c.Cache); err != nil {
 		log.Println(err)
 	}
-	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+	if err := aliases.Pull(c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	// Get Public Key for Alias
-	publicKey, err := aliases.GetPublicKey(c.Cache, c.Network, alias)
+	publicKey, err := aliasgo.GetPublicKey(aliases, c.Cache, c.Network, alias)
 	if err != nil {
 		return "", err
 	}
@@ -78,10 +78,10 @@ func (c *Client) Alias(alias string) (string, error) {
 }
 
 func (c *Client) Head(channel string) ([]byte, error) {
-	ch := &bcgo.PoWChannel{
+	ch := &bcgo.Channel{
 		Name: channel,
 	}
-	if err := bcgo.LoadHead(ch, c.Cache, c.Network); err != nil {
+	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
 		return nil, err
 	}
 	return ch.GetHead(), nil
@@ -111,13 +111,13 @@ func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
 func (c *Client) Write(channel string, accesses []string, input io.Reader) (int, error) {
 	// Open Alias Channel
 	aliases := aliasgo.OpenAliasChannel()
-	if err := bcgo.LoadCachedHead(aliases, c.Cache); err != nil {
+	if err := aliases.LoadCachedHead(c.Cache); err != nil {
 		log.Println(err)
 	}
-	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+	if err := aliases.Pull(c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
-	acl := aliases.GetPublicKeys(c.Cache, c.Network, accesses)
+	acl := aliasgo.GetPublicKeys(aliases, c.Cache, c.Network, accesses)
 
 	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
@@ -141,16 +141,15 @@ func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningList
 		return nil, err
 	}
 
-	ch := &bcgo.PoWChannel{
-		Name:      channel,
-		Threshold: threshold,
+	ch := &bcgo.Channel{
+		Name: channel,
 	}
 
-	if err := bcgo.LoadHead(ch, c.Cache, c.Network); err != nil {
+	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 
-	hash, _, err := node.Mine(ch, listener)
+	hash, _, err := node.Mine(ch, threshold, listener)
 	if err != nil {
 		return nil, err
 	}
@@ -158,20 +157,20 @@ func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningList
 }
 
 func (c *Client) Pull(channel string, network bcgo.Network) error {
-	ch := &bcgo.PoWChannel{
+	ch := &bcgo.Channel{
 		Name: channel,
 	}
-	return bcgo.Pull(ch, c.Cache, network)
+	return ch.Pull(c.Cache, network)
 }
 
 func (c *Client) Push(channel string, network bcgo.Network) error {
-	ch := &bcgo.PoWChannel{
+	ch := &bcgo.Channel{
 		Name: channel,
 	}
-	if err := bcgo.LoadHead(ch, c.Cache, nil); err != nil {
+	if err := ch.LoadHead(c.Cache, nil); err != nil {
 		return err
 	}
-	return bcgo.Push(ch, c.Cache, network)
+	return ch.Push(c.Cache, network)
 }
 
 func (c *Client) Purge() error {
@@ -429,6 +428,7 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tbc node - display registered alias and public key")
 	fmt.Fprintln(output, "\tbc alias [alias] - display public key for given alias")
 	fmt.Fprintln(output)
+	// TODO fmt.Fprintln(output, "\tbc keys - display all available keys")
 	fmt.Fprintln(output, "\tbc import-keys [alias] [access-code] - imports the alias and keypair from BC server")
 	fmt.Fprintln(output, "\tbc import-keys [alias] [access-code] [peer] - imports the alias and keypair from the given peer")
 	fmt.Fprintln(output, "\tbc export-keys [alias] - generates a new access code and exports the alias and keypair to BC server")
