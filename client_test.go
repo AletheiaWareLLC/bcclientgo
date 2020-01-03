@@ -25,6 +25,7 @@ import (
 	"github.com/AletheiaWareLLC/aliasgo"
 	"github.com/AletheiaWareLLC/bcclientgo"
 	"github.com/AletheiaWareLLC/bcgo"
+	"github.com/AletheiaWareLLC/cryptogo"
 	"github.com/AletheiaWareLLC/testinggo"
 	"os"
 	"testing"
@@ -40,7 +41,7 @@ func makeAlias(t *testing.T, cache bcgo.Cache, alias string) (*rsa.PrivateKey, *
 	record, err := aliasgo.CreateSignedAliasRecord(alias, privateKey)
 	testinggo.AssertNoError(t, err)
 
-	recordHash, err := bcgo.HashProtobuf(record)
+	recordHash, err := cryptogo.HashProtobuf(record)
 	testinggo.AssertNoError(t, err)
 
 	block := &bcgo.Block{
@@ -52,7 +53,7 @@ func makeAlias(t *testing.T, cache bcgo.Cache, alias string) (*rsa.PrivateKey, *
 		},
 	}
 
-	blockHash, err := bcgo.HashProtobuf(block)
+	blockHash, err := cryptogo.HashProtobuf(block)
 	testinggo.AssertNoError(t, err)
 
 	err = cache.PutHead(aliasgo.ALIAS, &bcgo.Reference{
@@ -77,7 +78,7 @@ func setAlias(t *testing.T, dir string) {
 	if err != nil {
 		t.Fatalf("Could not get key directory: '%s'", err)
 	}
-	if _, err := bcgo.CreateRSAPrivateKey(keyDir, alias, []byte(password)); err != nil {
+	if _, err := cryptogo.CreateRSAPrivateKey(keyDir, alias, []byte(password)); err != nil {
 		t.Fatalf("Could not create keys: '%s'", err)
 	}
 }
@@ -109,7 +110,7 @@ func TestClientAlias(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		cache := bcgo.NewMemoryCache(2)
 		key, _ := makeAlias(t, cache, "Alice")
-		publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&key.PublicKey)
+		publicKeyBytes, err := cryptogo.RSAPublicKeyToPKIXBytes(&key.PublicKey)
 		testinggo.AssertNoError(t, err)
 		expected := base64.RawURLEncoding.EncodeToString(publicKeyBytes)
 		client := &main.Client{
@@ -141,7 +142,7 @@ func TestClientHead(t *testing.T) {
 			Timestamp:   1234,
 			ChannelName: "Test",
 		}
-		hash, err := bcgo.HashProtobuf(block)
+		hash, err := cryptogo.HashProtobuf(block)
 		testinggo.AssertNoError(t, err)
 		testinggo.AssertNoError(t, cache.PutBlock(hash, block))
 		testinggo.AssertNoError(t, cache.PutHead("Test", &bcgo.Reference{
@@ -175,7 +176,7 @@ func TestClientBlock(t *testing.T) {
 			ChannelName: "Test",
 			Miner:       "FooBar123",
 		}
-		hash, err := bcgo.HashProtobuf(expected)
+		hash, err := cryptogo.HashProtobuf(expected)
 		testinggo.AssertNoError(t, err)
 		testinggo.AssertNoError(t, cache.PutBlock(hash, expected))
 		block, err := client.Block("Test", hash)
@@ -315,7 +316,7 @@ func TestClientMine(t *testing.T) {
 			Timestamp: 1234,
 		}
 
-		recordHash, err := bcgo.HashProtobuf(record)
+		recordHash, err := cryptogo.HashProtobuf(record)
 		testinggo.AssertNoError(t, err)
 
 		client.Cache.PutBlockEntry("Test", &bcgo.BlockEntry{
@@ -346,7 +347,7 @@ func TestClientMine(t *testing.T) {
 			Timestamp: 1234,
 		}
 
-		recordHash1, err := bcgo.HashProtobuf(record1)
+		recordHash1, err := cryptogo.HashProtobuf(record1)
 		testinggo.AssertNoError(t, err)
 
 		client.Cache.PutBlockEntry("Test", &bcgo.BlockEntry{
@@ -358,7 +359,7 @@ func TestClientMine(t *testing.T) {
 			Timestamp: 5678,
 		}
 
-		recordHash2, err := bcgo.HashProtobuf(record2)
+		recordHash2, err := cryptogo.HashProtobuf(record2)
 		testinggo.AssertNoError(t, err)
 
 		client.Cache.PutBlockEntry("Test", &bcgo.BlockEntry{

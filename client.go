@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/AletheiaWareLLC/aliasgo"
 	"github.com/AletheiaWareLLC/bcgo"
+	"github.com/AletheiaWareLLC/cryptogo"
 	"io"
 	"log"
 	"os"
@@ -69,7 +70,7 @@ func (c *Client) Alias(alias string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(publicKey)
+	publicKeyBytes, err := cryptogo.RSAPublicKeyToPKIXBytes(publicKey)
 	if err != nil {
 		return "", err
 	}
@@ -188,7 +189,7 @@ func (c *Client) ImportKeys(peer, alias, accessCode string) error {
 	if err != nil {
 		return err
 	}
-	return bcgo.ImportKeys(peer, keystore, alias, accessCode)
+	return cryptogo.ImportKeys(peer, keystore, alias, accessCode)
 }
 
 func (c *Client) ExportKeys(peer, alias string) (string, error) {
@@ -198,11 +199,11 @@ func (c *Client) ExportKeys(peer, alias string) (string, error) {
 		return "", err
 	}
 	// Get Password
-	password, err := bcgo.GetPassword()
+	password, err := cryptogo.GetPassword()
 	if err != nil {
 		return "", err
 	}
-	return bcgo.ExportKeys(peer, keystore, alias, password)
+	return cryptogo.ExportKeys(peer, keystore, alias, password)
 }
 
 func (c *Client) Handle(args []string) {
@@ -210,7 +211,7 @@ func (c *Client) Handle(args []string) {
 		switch args[0] {
 		case "init":
 			PrintLegalese(os.Stdout)
-			node, err := c.Init(&bcgo.PrintingMiningListener{os.Stdout})
+			node, err := c.Init(&bcgo.PrintingMiningListener{Output: os.Stdout})
 			if err != nil {
 				log.Println(err)
 				return
@@ -263,7 +264,7 @@ func (c *Client) Handle(args []string) {
 					log.Println(err)
 					return
 				}
-				hash, err := c.Mine(args[1], uint64(threshold), &bcgo.PrintingMiningListener{os.Stdout})
+				hash, err := c.Mine(args[1], uint64(threshold), &bcgo.PrintingMiningListener{Output: os.Stdout})
 				if err != nil {
 					log.Println(err)
 					return
@@ -319,7 +320,7 @@ func (c *Client) Handle(args []string) {
 			if len(args) > 1 {
 				network := c.Network
 				if len(args) > 2 {
-					network = &bcgo.TcpNetwork{args[2:]}
+					network = &bcgo.TcpNetwork{Peers: args[2:]}
 				}
 				if err := c.Pull(args[1], network); err != nil {
 					log.Println(err)
@@ -333,7 +334,7 @@ func (c *Client) Handle(args []string) {
 			if len(args) > 1 {
 				network := c.Network
 				if len(args) > 2 {
-					network = &bcgo.TcpNetwork{args[2:]}
+					network = &bcgo.TcpNetwork{Peers: args[2:]}
 				}
 				if err := c.Push(args[1], network); err != nil {
 					log.Println(err)
@@ -411,7 +412,7 @@ func (c *Client) Handle(args []string) {
 				log.Println("Usage: export-keys [alias]")
 			}
 		case "random":
-			log.Println(bcgo.GenerateRandomKey())
+			log.Println(cryptogo.GenerateRandomKey())
 		default:
 			log.Println("Cannot handle", args[0])
 		}
@@ -461,7 +462,7 @@ func PrintLegalese(output io.Writer) {
 
 func PrintNode(output io.Writer, node *bcgo.Node) error {
 	fmt.Fprintln(output, node.Alias)
-	publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
+	publicKeyBytes, err := cryptogo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
 	if err != nil {
 		return err
 	}
@@ -497,7 +498,7 @@ func main() {
 	}
 
 	// Create network of peers
-	network := &bcgo.TcpNetwork{peers}
+	network := &bcgo.TcpNetwork{Peers: peers}
 
 	client := &Client{
 		Root:    root,
