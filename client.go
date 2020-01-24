@@ -84,7 +84,7 @@ func (c *Client) Head(channel string) ([]byte, error) {
 	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
 		return nil, err
 	}
-	return ch.GetHead(), nil
+	return ch.Head, nil
 }
 
 func (c *Client) Block(channel string, hash []byte) (*bcgo.Block, error) {
