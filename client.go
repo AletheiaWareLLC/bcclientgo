@@ -525,7 +525,12 @@ func (c *Client) Handle(args []string) {
 				log.Println("Usage: export-keys [alias]")
 			}
 		case "random":
-			log.Println(cryptogo.GenerateRandomKey())
+			random, err := cryptogo.GenerateRandomKey()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println(random)
 		default:
 			log.Println("Cannot handle", args[0])
 		}
