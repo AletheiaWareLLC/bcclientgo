@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -108,16 +109,92 @@ func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
 	return nil, errors.New("Could not get block containing record")
 }
 
+func (c *Client) Read(channel string, blockHash, recordHash []byte, output io.Writer) error {
+	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	if err != nil {
+		return err
+	}
+
+	ch := &bcgo.Channel{
+		Name: channel,
+	}
+
+	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
+		log.Println(err)
+	}
+
+	if blockHash == nil {
+		blockHash = ch.Head
+	}
+
+	return bcgo.Read(channel, blockHash, nil, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key, payload []byte) error {
+		bcgo.PrintBlockEntry(output, "", entry)
+		return nil
+	})
+}
+
+func (c *Client) ReadKey(channel string, blockHash, recordHash []byte, output io.Writer) error {
+	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	if err != nil {
+		return err
+	}
+
+	ch := &bcgo.Channel{
+		Name: channel,
+	}
+
+	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
+		log.Println(err)
+	}
+
+	if blockHash == nil {
+		blockHash = ch.Head
+	}
+
+	return bcgo.ReadKey(channel, blockHash, nil, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(key []byte) error {
+		output.Write(key)
+		return nil
+	})
+}
+
+func (c *Client) ReadPayload(channel string, blockHash, recordHash []byte, output io.Writer) error {
+	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	if err != nil {
+		return err
+	}
+
+	ch := &bcgo.Channel{
+		Name: channel,
+	}
+
+	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
+		log.Println(err)
+	}
+
+	if blockHash == nil {
+		blockHash = ch.Head
+	}
+
+	return bcgo.Read(channel, blockHash, nil, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key, payload []byte) error {
+		output.Write(payload)
+		return nil
+	})
+}
+
 func (c *Client) Write(channel string, accesses []string, input io.Reader) (int, error) {
-	// Open Alias Channel
-	aliases := aliasgo.OpenAliasChannel()
-	if err := aliases.LoadCachedHead(c.Cache); err != nil {
-		log.Println(err)
+	var acl map[string]*rsa.PublicKey
+
+	if len(accesses) > 0 {
+		// Open Alias Channel
+		aliases := aliasgo.OpenAliasChannel()
+		if err := aliases.LoadCachedHead(c.Cache); err != nil {
+			log.Println(err)
+		}
+		if err := aliases.Pull(c.Cache, c.Network); err != nil {
+			log.Println(err)
+		}
+		acl = aliasgo.GetPublicKeys(aliases, c.Cache, c.Network, accesses)
 	}
-	if err := aliases.Pull(c.Cache, c.Network); err != nil {
-		log.Println(err)
-	}
-	acl := aliasgo.GetPublicKeys(aliases, c.Cache, c.Network, accesses)
 
 	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
@@ -241,8 +318,41 @@ func (c *Client) Handle(args []string) {
 			} else {
 				log.Println("Usage: alias [alias]")
 			}
+		case "read":
+			if len(args) > 1 {
+				var blockHash, recordHash []byte
+				err := c.Read(args[1], blockHash, recordHash, os.Stdout)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+			} else {
+				log.Println("Usage: read [channel-name]")
+			}
+		case "read-key":
+			if len(args) > 1 {
+				var blockHash, recordHash []byte
+				err := c.ReadKey(args[1], blockHash, recordHash, os.Stdout)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+			} else {
+				log.Println("Usage: read [channel-name]")
+			}
+		case "read-payload":
+			if len(args) > 1 {
+				var blockHash, recordHash []byte
+				err := c.ReadPayload(args[1], blockHash, recordHash, os.Stdout)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+			} else {
+				log.Println("Usage: read [channel-name]")
+			}
 		case "write":
-			if len(args) > 2 {
+			if len(args) > 1 {
 				var acl []string
 				if len(args) > 2 {
 					acl = args[2:]
@@ -442,8 +552,11 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tbc block [channel] [hash] - display block with given hash")
 	fmt.Fprintln(output, "\tbc record [channel] [hash] - display record with given hash")
 	fmt.Fprintln(output)
-	fmt.Fprintln(output, "\tbc write [channel] [access...] - reads data from stdin and writes it to cache for the given channel and grants access to the given aliases")
-	fmt.Fprintln(output, "\tbc mine [channel] [threshold] - mines the given channel to the given threshold")
+	fmt.Fprintf(output, "\t%s read [channel] [block-hash] [record-hash]- reads entries the given channel and writes to stdout\n", os.Args[0])
+	fmt.Fprintf(output, "\t%s read-key [channel] [block-hash] [record-hash]- reads keys the given channel and writes to stdout\n", os.Args[0])
+	fmt.Fprintf(output, "\t%s read-payload [channel] [block-hash] [record-hash]- reads payloads the given channel and writes to stdout\n", os.Args[0])
+	fmt.Fprintf(output, "\t%s write [channel] [access...] - reads data from stdin and writes it to cache for the given channel and grants access to the given aliases\n", os.Args[0])
+	fmt.Fprintf(output, "\t%s mine [channel] [threshold] - mines the given channel to the given threshold\n", os.Args[0])
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tbc peers - display list of peers")
 	fmt.Fprintln(output, "\tbc add-peer [peer] - adds the given peer to the list of peers")
