@@ -17,6 +17,6 @@
 set -e
 set -x
 
-go fmt $GOPATH/src/github.com/AletheiaWareLLC/*
+go fmt $GOPATH/src/github.com/AletheiaWareLLC/{aliasgo,bcgo,bcclientgo,cryptogo,financego}
 go test $GOPATH/src/github.com/AletheiaWareLLC/{aliasgo,bcgo,bcclientgo,cryptogo,financego}
 go build github.com/AletheiaWareLLC/bcclientgo
