@@ -28,6 +28,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -455,6 +456,11 @@ func (c *Client) Handle(args []string) {
 			}
 		case "cache":
 			dir, err := bcgo.GetCacheDirectory(c.Root)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			dir, err = filepath.Abs(dir)
 			if err != nil {
 				log.Println(err)
 				return
