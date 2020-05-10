@@ -626,15 +626,12 @@ func main() {
 		if err != nil {
 			log.Fatal("Could not get network peers:", err)
 		}
-		if len(peers) == 0 {
-			peers = append(peers, bcgo.GetBCHost())
-		}
 	} else {
 		peers = bcgo.SplitRemoveEmpty(*peer, ",")
 	}
 
 	// Create network of peers
-	network := &bcgo.TcpNetwork{Peers: peers}
+	network := bcgo.NewTCPNetwork(peers...)
 
 	client := &Client{
 		Root:    rootDir,
