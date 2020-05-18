@@ -60,7 +60,7 @@ func main() {
 				return
 			}
 		case "node":
-			node, err := client.Node()
+			node, err := client.GetNode()
 			if err != nil {
 				log.Println(err)
 				return
@@ -208,7 +208,7 @@ func main() {
 				log.Println("Usage: push [channel-name]")
 			}
 		case "cache":
-			rootDir, err := client.Root()
+			rootDir, err := client.GetRoot()
 			if err != nil {
 				log.Println(err)
 			}
@@ -230,7 +230,7 @@ func main() {
 			}
 			log.Println("Cache purged")
 		case "keystore":
-			rootDir, err := client.Root()
+			rootDir, err := client.GetRoot()
 			if err != nil {
 				log.Println(err)
 			}
@@ -246,7 +246,7 @@ func main() {
 			}
 			log.Println("KeyStore:", keystore)
 		case "peers":
-			peers, err := client.Peers()
+			peers, err := client.GetPeers()
 			if err != nil {
 				log.Println(err)
 				return
@@ -254,7 +254,7 @@ func main() {
 			log.Println("Peers:", strings.Join(peers, ", "))
 		case "add-peer":
 			if len(args) > 1 {
-				rootDir, err := client.Root()
+				rootDir, err := client.GetRoot()
 				if err != nil {
 					log.Println(err)
 				}
