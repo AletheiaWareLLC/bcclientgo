@@ -21,6 +21,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"github.com/AletheiaWareLLC/aliasgo"
 	"github.com/AletheiaWareLLC/bcgo"
 	"github.com/AletheiaWareLLC/cryptogo"
@@ -30,15 +31,115 @@ import (
 )
 
 type Client struct {
-	Root    string
-	Peers   []string
-	Cache   bcgo.Cache
-	Network bcgo.Network
+	root    string
+	peers   []string
+	cache   bcgo.Cache
+	network bcgo.Network
+	node    *bcgo.Node
+}
+
+func (c *Client) Root() (string, error) {
+	if c.root == "" {
+		rootDir, err := bcgo.GetRootDirectory()
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("Could not get root directory: %s\n", err.Error()))
+		}
+		if err := bcgo.ReadConfig(rootDir); err != nil {
+			log.Println("Error reading config:", err)
+		}
+		c.root = rootDir
+	}
+	return c.root, nil
+}
+
+func (c *Client) DefaultPeers() ([]string, error) {
+	rootDir, err := c.Root()
+	if err != nil {
+		return nil, err
+	}
+	return bcgo.GetPeers(rootDir)
+}
+
+func (c *Client) Peers() ([]string, error) {
+	return c.peers, nil
+}
+
+func (c *Client) Cache() (bcgo.Cache, error) {
+	if c.cache == nil {
+		rootDir, err := c.Root()
+		if err != nil {
+			return nil, err
+		}
+		cacheDir, err := bcgo.GetCacheDirectory(rootDir)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Could not get cache directory: %s\n", err.Error()))
+		}
+		cache, err := bcgo.NewFileCache(cacheDir)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Could not create file cache: %s\n", err.Error()))
+		}
+		c.cache = cache
+	}
+	return c.cache, nil
+}
+
+func (c *Client) Network() (bcgo.Network, error) {
+	if c.network == nil {
+		peers, err := c.Peers()
+		if err != nil {
+			return nil, err
+		}
+		c.network = bcgo.NewTCPNetwork(peers...)
+	}
+	return c.network, nil
+}
+
+func (c *Client) Node() (*bcgo.Node, error) {
+	if c.node == nil {
+		rootDir, err := c.Root()
+		if err != nil {
+			return nil, err
+		}
+		cache, err := c.Cache()
+		if err != nil {
+			return nil, err
+		}
+		network, err := c.Network()
+		if err != nil {
+			return nil, err
+		}
+		node, err := bcgo.GetNode(rootDir, cache, network)
+		if err != nil {
+			return nil, err
+		}
+		c.node = node
+	}
+	return c.node, nil
+}
+
+func (c *Client) SetRoot(root string) {
+	c.root = root
+}
+
+func (c *Client) SetPeers(peers ...string) {
+	c.peers = peers
+}
+
+func (c *Client) SetCache(cache bcgo.Cache) {
+	c.cache = cache
+}
+
+func (c *Client) SetNetwork(network bcgo.Network) {
+	c.network = network
+}
+
+func (c *Client) SetNode(node *bcgo.Node) {
+	c.node = node
 }
 
 func (c *Client) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 	// Create Node
-	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	node, err := c.Node()
 	if err != nil {
 		return nil, err
 	}
@@ -52,16 +153,24 @@ func (c *Client) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 }
 
 func (c *Client) Alias(alias string) (string, error) {
+	cache, err := c.Cache()
+	if err != nil {
+		return "", err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return "", err
+	}
 	// Open Alias Channel
 	aliases := aliasgo.OpenAliasChannel()
-	if err := aliases.LoadCachedHead(c.Cache); err != nil {
+	if err := aliases.LoadCachedHead(cache); err != nil {
 		log.Println(err)
 	}
-	if err := aliases.Pull(c.Cache, c.Network); err != nil {
+	if err := aliases.Pull(cache, network); err != nil {
 		log.Println(err)
 	}
 	// Get Public Key for Alias
-	publicKey, err := aliasgo.GetPublicKey(aliases, c.Cache, c.Network, alias)
+	publicKey, err := aliasgo.GetPublicKey(aliases, cache, network, alias)
 	if err != nil {
 		return "", err
 	}
@@ -73,17 +182,33 @@ func (c *Client) Alias(alias string) (string, error) {
 }
 
 func (c *Client) Head(channel string) ([]byte, error) {
+	cache, err := c.Cache()
+	if err != nil {
+		return nil, err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return nil, err
+	}
 	ch := &bcgo.Channel{
 		Name: channel,
 	}
-	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
+	if err := ch.LoadHead(cache, network); err != nil {
 		return nil, err
 	}
 	return ch.Head, nil
 }
 
 func (c *Client) Block(channel string, hash []byte) (*bcgo.Block, error) {
-	block, err := bcgo.GetBlock(channel, c.Cache, c.Network, hash)
+	cache, err := c.Cache()
+	if err != nil {
+		return nil, err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return nil, err
+	}
+	block, err := bcgo.GetBlock(channel, cache, network, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +216,15 @@ func (c *Client) Block(channel string, hash []byte) (*bcgo.Block, error) {
 }
 
 func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
-	block, err := bcgo.GetBlockContainingRecord(channel, c.Cache, c.Network, hash)
+	cache, err := c.Cache()
+	if err != nil {
+		return nil, err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return nil, err
+	}
+	block, err := bcgo.GetBlockContainingRecord(channel, cache, network, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +237,15 @@ func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
 }
 
 func (c *Client) Read(channel string, blockHash, recordHash []byte, output io.Writer) error {
-	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	cache, err := c.Cache()
+	if err != nil {
+		return err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return err
+	}
+	node, err := c.Node()
 	if err != nil {
 		return err
 	}
@@ -113,7 +254,7 @@ func (c *Client) Read(channel string, blockHash, recordHash []byte, output io.Wr
 		Name: channel,
 	}
 
-	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
+	if err := ch.LoadHead(cache, network); err != nil {
 		log.Println(err)
 	}
 
@@ -121,14 +262,22 @@ func (c *Client) Read(channel string, blockHash, recordHash []byte, output io.Wr
 		blockHash = ch.Head
 	}
 
-	return bcgo.Read(channel, blockHash, nil, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key, payload []byte) error {
+	return bcgo.Read(channel, blockHash, nil, cache, network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key, payload []byte) error {
 		bcgo.PrintBlockEntry(output, "", entry)
 		return nil
 	})
 }
 
 func (c *Client) ReadKey(channel string, blockHash, recordHash []byte, output io.Writer) error {
-	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	cache, err := c.Cache()
+	if err != nil {
+		return err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return err
+	}
+	node, err := c.Node()
 	if err != nil {
 		return err
 	}
@@ -137,7 +286,7 @@ func (c *Client) ReadKey(channel string, blockHash, recordHash []byte, output io
 		Name: channel,
 	}
 
-	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
+	if err := ch.LoadHead(cache, network); err != nil {
 		log.Println(err)
 	}
 
@@ -145,14 +294,22 @@ func (c *Client) ReadKey(channel string, blockHash, recordHash []byte, output io
 		blockHash = ch.Head
 	}
 
-	return bcgo.ReadKey(channel, blockHash, nil, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(key []byte) error {
+	return bcgo.ReadKey(channel, blockHash, nil, cache, network, node.Alias, node.Key, recordHash, func(key []byte) error {
 		output.Write(key)
 		return nil
 	})
 }
 
 func (c *Client) ReadPayload(channel string, blockHash, recordHash []byte, output io.Writer) error {
-	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	cache, err := c.Cache()
+	if err != nil {
+		return err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return err
+	}
+	node, err := c.Node()
 	if err != nil {
 		return err
 	}
@@ -161,7 +318,7 @@ func (c *Client) ReadPayload(channel string, blockHash, recordHash []byte, outpu
 		Name: channel,
 	}
 
-	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
+	if err := ch.LoadHead(cache, network); err != nil {
 		log.Println(err)
 	}
 
@@ -169,34 +326,42 @@ func (c *Client) ReadPayload(channel string, blockHash, recordHash []byte, outpu
 		blockHash = ch.Head
 	}
 
-	return bcgo.Read(channel, blockHash, nil, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key, payload []byte) error {
+	return bcgo.Read(channel, blockHash, nil, cache, network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key, payload []byte) error {
 		output.Write(payload)
 		return nil
 	})
 }
 
 func (c *Client) Write(channel string, accesses []string, input io.Reader) (int, error) {
+	cache, err := c.Cache()
+	if err != nil {
+		return 0, err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return 0, err
+	}
 	var acl map[string]*rsa.PublicKey
 
 	if len(accesses) > 0 {
 		// Open Alias Channel
 		aliases := aliasgo.OpenAliasChannel()
-		if err := aliases.LoadCachedHead(c.Cache); err != nil {
+		if err := aliases.LoadCachedHead(cache); err != nil {
 			log.Println(err)
 		}
-		if err := aliases.Pull(c.Cache, c.Network); err != nil {
+		if err := aliases.Pull(cache, network); err != nil {
 			log.Println(err)
 		}
-		acl = aliasgo.GetPublicKeys(aliases, c.Cache, c.Network, accesses)
+		acl = aliasgo.GetPublicKeys(aliases, cache, network, accesses)
 	}
 
-	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	node, err := c.Node()
 	if err != nil {
 		return 0, err
 	}
 
 	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, nil, input, func(key []byte, record *bcgo.Record) error {
-		_, err := bcgo.WriteRecord(channel, c.Cache, record)
+		_, err := bcgo.WriteRecord(channel, cache, record)
 		return err
 	})
 	if err != nil {
@@ -207,7 +372,15 @@ func (c *Client) Write(channel string, accesses []string, input io.Reader) (int,
 }
 
 func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningListener) ([]byte, error) {
-	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	cache, err := c.Cache()
+	if err != nil {
+		return nil, err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return nil, err
+	}
+	node, err := c.Node()
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +389,7 @@ func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningList
 		Name: channel,
 	}
 
-	if err := ch.LoadHead(c.Cache, c.Network); err != nil {
+	if err := ch.LoadHead(cache, network); err != nil {
 		log.Println(err)
 	}
 
@@ -228,25 +401,45 @@ func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningList
 }
 
 func (c *Client) Pull(channel string) error {
+	cache, err := c.Cache()
+	if err != nil {
+		return err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return err
+	}
 	ch := &bcgo.Channel{
 		Name: channel,
 	}
-	return ch.Pull(c.Cache, c.Network)
+	return ch.Pull(cache, network)
 }
 
 func (c *Client) Push(channel string) error {
+	cache, err := c.Cache()
+	if err != nil {
+		return err
+	}
+	network, err := c.Network()
+	if err != nil {
+		return err
+	}
 	ch := &bcgo.Channel{
 		Name: channel,
 	}
-	if err := ch.LoadHead(c.Cache, nil); err != nil {
+	if err := ch.LoadHead(cache, nil); err != nil {
 		return err
 	}
-	return ch.Push(c.Cache, c.Network)
+	return ch.Push(cache, network)
 }
 
 func (c *Client) Purge() error {
+	rootDir, err := c.Root()
+	if err != nil {
+		return err
+	}
 	// Get cache directory
-	dir, err := bcgo.GetCacheDirectory(c.Root)
+	dir, err := bcgo.GetCacheDirectory(rootDir)
 	if err != nil {
 		return err
 	}
@@ -254,8 +447,12 @@ func (c *Client) Purge() error {
 }
 
 func (c *Client) ImportKeys(peer, alias, accessCode string) error {
+	rootDir, err := c.Root()
+	if err != nil {
+		return err
+	}
 	// Get KeyStore
-	keystore, err := bcgo.GetKeyDirectory(c.Root)
+	keystore, err := bcgo.GetKeyDirectory(rootDir)
 	if err != nil {
 		return err
 	}
@@ -263,8 +460,12 @@ func (c *Client) ImportKeys(peer, alias, accessCode string) error {
 }
 
 func (c *Client) ExportKeys(peer, alias string) (string, error) {
+	rootDir, err := c.Root()
+	if err != nil {
+		return "", err
+	}
 	// Get KeyStore
-	keystore, err := bcgo.GetKeyDirectory(c.Root)
+	keystore, err := bcgo.GetKeyDirectory(rootDir)
 	if err != nil {
 		return "", err
 	}

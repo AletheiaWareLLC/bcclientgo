@@ -113,9 +113,8 @@ func TestClientAlias(t *testing.T) {
 		publicKeyBytes, err := cryptogo.RSAPublicKeyToPKIXBytes(&key.PublicKey)
 		testinggo.AssertNoError(t, err)
 		expected := base64.RawURLEncoding.EncodeToString(publicKeyBytes)
-		client := &bcclientgo.Client{
-			Cache: cache,
-		}
+		client := &bcclientgo.Client{}
+		client.SetCache(cache)
 		actual, err := client.Alias("Alice")
 		testinggo.AssertNoError(t, err)
 
@@ -124,9 +123,8 @@ func TestClientAlias(t *testing.T) {
 		}
 	})
 	t.Run("NotExists", func(t *testing.T) {
-		client := &bcclientgo.Client{
-			Cache: bcgo.NewMemoryCache(2),
-		}
+		client := &bcclientgo.Client{}
+		client.SetCache(bcgo.NewMemoryCache(2))
 		_, err := client.Alias("Alice")
 		testinggo.AssertError(t, aliasgo.ERROR_PUBLIC_KEY_NOT_FOUND, err)
 	})
@@ -135,9 +133,8 @@ func TestClientAlias(t *testing.T) {
 func TestClientHead(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		cache := bcgo.NewMemoryCache(2)
-		client := &bcclientgo.Client{
-			Cache: cache,
-		}
+		client := &bcclientgo.Client{}
+		client.SetCache(cache)
 		block := &bcgo.Block{
 			Timestamp:   1234,
 			ChannelName: "Test",
@@ -158,20 +155,18 @@ func TestClientHead(t *testing.T) {
 		}
 	})
 	t.Run("NotExists", func(t *testing.T) {
-		client := &bcclientgo.Client{
-			Cache: bcgo.NewMemoryCache(2),
-		}
+		client := &bcclientgo.Client{}
+		client.SetCache(bcgo.NewMemoryCache(2))
 		_, err := client.Head("Test")
-		testinggo.AssertError(t, "Head not found Test", err)
+		testinggo.AssertError(t, "Could not get Test head from peers", err)
 	})
 }
 
 func TestClientBlock(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		cache := bcgo.NewMemoryCache(2)
-		client := &bcclientgo.Client{
-			Cache: cache,
-		}
+		client := &bcclientgo.Client{}
+		client.SetCache(cache)
 		expected := &bcgo.Block{
 			ChannelName: "Test",
 			Miner:       "FooBar123",
@@ -186,13 +181,10 @@ func TestClientBlock(t *testing.T) {
 		}
 	})
 	t.Run("NotExists", func(t *testing.T) {
-		client := &bcclientgo.Client{
-			Cache: bcgo.NewMemoryCache(2),
-		}
-		hash := []byte("FooBar123")
-		expected := base64.RawURLEncoding.EncodeToString(hash)
-		_, err := client.Block("Test", hash)
-		testinggo.AssertError(t, fmt.Sprintf(bcgo.ERROR_BLOCK_NOT_FOUND, expected), err)
+		client := &bcclientgo.Client{}
+		client.SetCache(bcgo.NewMemoryCache(2))
+		_, err := client.Block("Test", []byte("FooBar123"))
+		testinggo.AssertError(t, "Could not get Test block from peers", err)
 	})
 }
 
@@ -224,10 +216,9 @@ func TestClientWrite(t *testing.T) {
 		setAlias(t, root)
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
-		client := &bcclientgo.Client{
-			Root:  root,
-			Cache: bcgo.NewMemoryCache(2),
-		}
+		client := &bcclientgo.Client{}
+		client.SetRoot(root)
+		client.SetCache(bcgo.NewMemoryCache(2))
 		buffer := &bytes.Buffer{}
 		size, err := client.Write("Test", nil, buffer)
 		testinggo.AssertNoError(t, err)
@@ -240,10 +231,9 @@ func TestClientWrite(t *testing.T) {
 		setAlias(t, root)
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
-		client := &bcclientgo.Client{
-			Root:  root,
-			Cache: bcgo.NewMemoryCache(2),
-		}
+		client := &bcclientgo.Client{}
+		client.SetRoot(root)
+		client.SetCache(bcgo.NewMemoryCache(2))
 		buffer := bytes.NewBufferString("FooBar123")
 		size, err := client.Write("Test", nil, buffer)
 		testinggo.AssertNoError(t, err)
@@ -258,10 +248,9 @@ func TestClientWrite(t *testing.T) {
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		cache := bcgo.NewMemoryCache(2)
 		makeAlias(t, cache, "Alice")
-		client := &bcclientgo.Client{
-			Root:  root,
-			Cache: cache,
-		}
+		client := &bcclientgo.Client{}
+		client.SetRoot(root)
+		client.SetCache(cache)
 		buffer := &bytes.Buffer{}
 		size, err := client.Write("Test", []string{"Alice"}, buffer)
 		testinggo.AssertNoError(t, err)
@@ -276,10 +265,9 @@ func TestClientWrite(t *testing.T) {
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		cache := bcgo.NewMemoryCache(2)
 		/*key, _ := */ makeAlias(t, cache, "Alice")
-		client := &bcclientgo.Client{
-			Root:  root,
-			Cache: cache,
-		}
+		client := &bcclientgo.Client{}
+		client.SetRoot(root)
+		client.SetCache(cache)
 		buffer := bytes.NewBufferString("FooBar123")
 		size, err := client.Write("Test", []string{"Alice"}, buffer)
 		testinggo.AssertNoError(t, err)
@@ -295,10 +283,9 @@ func TestClientMine(t *testing.T) {
 		setAlias(t, root)
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
-		client := &bcclientgo.Client{
-			Root:  root,
-			Cache: bcgo.NewMemoryCache(2),
-		}
+		client := &bcclientgo.Client{}
+		client.SetRoot(root)
+		client.SetCache(bcgo.NewMemoryCache(2))
 		_, err := client.Mine("Test", 1, nil)
 		testinggo.AssertError(t, fmt.Sprintf(bcgo.ERROR_NO_ENTRIES_TO_MINE, "Test"), err)
 	})
@@ -307,10 +294,9 @@ func TestClientMine(t *testing.T) {
 		setAlias(t, root)
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
-		client := &bcclientgo.Client{
-			Root:  root,
-			Cache: bcgo.NewMemoryCache(2),
-		}
+		client := &bcclientgo.Client{}
+		client.SetRoot(root)
+		client.SetCache(bcgo.NewMemoryCache(2))
 
 		record := &bcgo.Record{
 			Timestamp: 1234,
@@ -319,7 +305,9 @@ func TestClientMine(t *testing.T) {
 		recordHash, err := cryptogo.HashProtobuf(record)
 		testinggo.AssertNoError(t, err)
 
-		client.Cache.PutBlockEntry("Test", &bcgo.BlockEntry{
+		cache, err := client.Cache()
+		testinggo.AssertNoError(t, err)
+		cache.PutBlockEntry("Test", &bcgo.BlockEntry{
 			Record:     record,
 			RecordHash: recordHash,
 		})
@@ -338,10 +326,9 @@ func TestClientMine(t *testing.T) {
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		cache := bcgo.NewMemoryCache(2)
-		client := &bcclientgo.Client{
-			Root:  root,
-			Cache: cache,
-		}
+		client := &bcclientgo.Client{}
+		client.SetRoot(root)
+		client.SetCache(cache)
 
 		record1 := &bcgo.Record{
 			Timestamp: 1234,
@@ -350,7 +337,7 @@ func TestClientMine(t *testing.T) {
 		recordHash1, err := cryptogo.HashProtobuf(record1)
 		testinggo.AssertNoError(t, err)
 
-		client.Cache.PutBlockEntry("Test", &bcgo.BlockEntry{
+		cache.PutBlockEntry("Test", &bcgo.BlockEntry{
 			Record:     record1,
 			RecordHash: recordHash1,
 		})
@@ -362,7 +349,7 @@ func TestClientMine(t *testing.T) {
 		recordHash2, err := cryptogo.HashProtobuf(record2)
 		testinggo.AssertNoError(t, err)
 
-		client.Cache.PutBlockEntry("Test", &bcgo.BlockEntry{
+		cache.PutBlockEntry("Test", &bcgo.BlockEntry{
 			Record:     record2,
 			RecordHash: recordHash2,
 		})

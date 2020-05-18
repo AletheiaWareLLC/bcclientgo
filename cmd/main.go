@@ -40,50 +40,8 @@ func main() {
 	// Set log flags
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	// Load config files (if any)
-	err := bcgo.LoadConfig()
-	if err != nil {
-		log.Fatal("Could not load config:", err)
-	}
-
-	// Get root directory
-	rootDir, err := bcgo.GetRootDirectory()
-	if err != nil {
-		log.Fatal("Could not get root directory:", err)
-	}
-
-	// Get cache directory
-	cacheDir, err := bcgo.GetCacheDirectory(rootDir)
-	if err != nil {
-		log.Fatal("Could not get cache directory:", err)
-	}
-
-	// Create file cache
-	cache, err := bcgo.NewFileCache(cacheDir)
-	if err != nil {
-		log.Fatal("Could not create file cache:", err)
-	}
-
-	var peers []string
-	if *peer == "" {
-		// Get peers
-		peers, err = bcgo.GetPeers(rootDir)
-		if err != nil {
-			log.Fatal("Could not get network peers:", err)
-		}
-	} else {
-		peers = bcgo.SplitRemoveEmpty(*peer, ",")
-	}
-
-	// Create network of peers
-	network := bcgo.NewTCPNetwork(peers...)
-
-	client := &bcclientgo.Client{
-		Root:    rootDir,
-		Peers:   peers,
-		Cache:   cache,
-		Network: network,
-	}
+	client := &bcclientgo.Client{}
+	client.SetPeers(bcgo.SplitRemoveEmpty(*peer, ",")...)
 
 	args := flag.Args()
 
@@ -102,7 +60,7 @@ func main() {
 				return
 			}
 		case "node":
-			node, err := bcgo.GetNode(client.Root, client.Cache, client.Network)
+			node, err := client.Node()
 			if err != nil {
 				log.Println(err)
 				return
@@ -250,7 +208,11 @@ func main() {
 				log.Println("Usage: push [channel-name]")
 			}
 		case "cache":
-			dir, err := bcgo.GetCacheDirectory(client.Root)
+			rootDir, err := client.Root()
+			if err != nil {
+				log.Println(err)
+			}
+			dir, err := bcgo.GetCacheDirectory(rootDir)
 			if err != nil {
 				log.Println(err)
 				return
@@ -268,7 +230,11 @@ func main() {
 			}
 			log.Println("Cache purged")
 		case "keystore":
-			keystore, err := bcgo.GetKeyDirectory(client.Root)
+			rootDir, err := client.Root()
+			if err != nil {
+				log.Println(err)
+			}
+			keystore, err := bcgo.GetKeyDirectory(rootDir)
 			if err != nil {
 				log.Println(err)
 				return
@@ -280,10 +246,19 @@ func main() {
 			}
 			log.Println("KeyStore:", keystore)
 		case "peers":
-			log.Println("Peers:", strings.Join(client.Peers, ", "))
+			peers, err := client.Peers()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println("Peers:", strings.Join(peers, ", "))
 		case "add-peer":
 			if len(args) > 1 {
-				if err := bcgo.AddPeer(client.Root, args[1]); err != nil {
+				rootDir, err := client.Root()
+				if err != nil {
+					log.Println(err)
+				}
+				if err := bcgo.AddPeer(rootDir, args[1]); err != nil {
 					log.Println(err)
 					return
 				}
