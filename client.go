@@ -40,6 +40,8 @@ type Client struct {
 
 func (c *Client) GetRoot() (string, error) {
 	if c.Root == "" {
+		log.Println("bcclientgo.Client.GetRoot()")
+		log.Println(os.Environ())
 		rootDir, err := bcgo.GetRootDirectory()
 		if err != nil {
 			return "", errors.New(fmt.Sprintf("Could not get root directory: %s\n", err.Error()))
