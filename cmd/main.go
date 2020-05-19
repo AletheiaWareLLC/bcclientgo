@@ -40,7 +40,7 @@ func main() {
 	// Set log flags
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	client := &bcclientgo.Client{}
+	client := &bcclientgo.BCClient{}
 	client.SetPeers(bcgo.SplitRemoveEmpty(*peer, ",")...)
 
 	args := flag.Args()

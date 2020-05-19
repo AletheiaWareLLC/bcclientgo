@@ -30,7 +30,7 @@ import (
 	"os"
 )
 
-type Client struct {
+type BCClient struct {
 	Root    string
 	Peers   []string
 	Cache   bcgo.Cache
@@ -38,9 +38,9 @@ type Client struct {
 	Node    *bcgo.Node
 }
 
-func (c *Client) GetRoot() (string, error) {
+func (c *BCClient) GetRoot() (string, error) {
 	if c.Root == "" {
-		log.Println("bcclientgo.Client.GetRoot()")
+		log.Println("bcclientgo.BCClient.GetRoot()")
 		log.Println(os.Environ())
 		rootDir, err := bcgo.GetRootDirectory()
 		if err != nil {
@@ -54,7 +54,7 @@ func (c *Client) GetRoot() (string, error) {
 	return c.Root, nil
 }
 
-func (c *Client) GetDefaultPeers() ([]string, error) {
+func (c *BCClient) GetDefaultPeers() ([]string, error) {
 	rootDir, err := c.GetRoot()
 	if err != nil {
 		return nil, err
@@ -62,11 +62,11 @@ func (c *Client) GetDefaultPeers() ([]string, error) {
 	return bcgo.GetPeers(rootDir)
 }
 
-func (c *Client) GetPeers() ([]string, error) {
+func (c *BCClient) GetPeers() ([]string, error) {
 	return c.Peers, nil
 }
 
-func (c *Client) GetCache() (bcgo.Cache, error) {
+func (c *BCClient) GetCache() (bcgo.Cache, error) {
 	if c.Cache == nil {
 		rootDir, err := c.GetRoot()
 		if err != nil {
@@ -85,7 +85,7 @@ func (c *Client) GetCache() (bcgo.Cache, error) {
 	return c.Cache, nil
 }
 
-func (c *Client) GetNetwork() (bcgo.Network, error) {
+func (c *BCClient) GetNetwork() (bcgo.Network, error) {
 	if c.Network == nil {
 		peers, err := c.GetPeers()
 		if err != nil {
@@ -96,7 +96,7 @@ func (c *Client) GetNetwork() (bcgo.Network, error) {
 	return c.Network, nil
 }
 
-func (c *Client) GetNode() (*bcgo.Node, error) {
+func (c *BCClient) GetNode() (*bcgo.Node, error) {
 	if c.Node == nil {
 		rootDir, err := c.GetRoot()
 		if err != nil {
@@ -119,27 +119,27 @@ func (c *Client) GetNode() (*bcgo.Node, error) {
 	return c.Node, nil
 }
 
-func (c *Client) SetRoot(root string) {
+func (c *BCClient) SetRoot(root string) {
 	c.Root = root
 }
 
-func (c *Client) SetPeers(peers ...string) {
+func (c *BCClient) SetPeers(peers ...string) {
 	c.Peers = peers
 }
 
-func (c *Client) SetCache(cache bcgo.Cache) {
+func (c *BCClient) SetCache(cache bcgo.Cache) {
 	c.Cache = cache
 }
 
-func (c *Client) SetNetwork(network bcgo.Network) {
+func (c *BCClient) SetNetwork(network bcgo.Network) {
 	c.Network = network
 }
 
-func (c *Client) SetNode(node *bcgo.Node) {
+func (c *BCClient) SetNode(node *bcgo.Node) {
 	c.Node = node
 }
 
-func (c *Client) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
+func (c *BCClient) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 	// Create Node
 	node, err := c.GetNode()
 	if err != nil {
@@ -154,7 +154,7 @@ func (c *Client) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 	return node, nil
 }
 
-func (c *Client) Alias(alias string) (string, error) {
+func (c *BCClient) Alias(alias string) (string, error) {
 	cache, err := c.GetCache()
 	if err != nil {
 		return "", err
@@ -183,7 +183,7 @@ func (c *Client) Alias(alias string) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(publicKeyBytes), nil
 }
 
-func (c *Client) Head(channel string) ([]byte, error) {
+func (c *BCClient) Head(channel string) ([]byte, error) {
 	cache, err := c.GetCache()
 	if err != nil {
 		return nil, err
@@ -201,7 +201,7 @@ func (c *Client) Head(channel string) ([]byte, error) {
 	return ch.Head, nil
 }
 
-func (c *Client) Block(channel string, hash []byte) (*bcgo.Block, error) {
+func (c *BCClient) Block(channel string, hash []byte) (*bcgo.Block, error) {
 	cache, err := c.GetCache()
 	if err != nil {
 		return nil, err
@@ -217,7 +217,7 @@ func (c *Client) Block(channel string, hash []byte) (*bcgo.Block, error) {
 	return block, nil
 }
 
-func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
+func (c *BCClient) Record(channel string, hash []byte) (*bcgo.Record, error) {
 	cache, err := c.GetCache()
 	if err != nil {
 		return nil, err
@@ -238,7 +238,7 @@ func (c *Client) Record(channel string, hash []byte) (*bcgo.Record, error) {
 	return nil, errors.New("Could not get block containing record")
 }
 
-func (c *Client) Read(channel string, blockHash, recordHash []byte, output io.Writer) error {
+func (c *BCClient) Read(channel string, blockHash, recordHash []byte, output io.Writer) error {
 	cache, err := c.GetCache()
 	if err != nil {
 		return err
@@ -270,7 +270,7 @@ func (c *Client) Read(channel string, blockHash, recordHash []byte, output io.Wr
 	})
 }
 
-func (c *Client) ReadKey(channel string, blockHash, recordHash []byte, output io.Writer) error {
+func (c *BCClient) ReadKey(channel string, blockHash, recordHash []byte, output io.Writer) error {
 	cache, err := c.GetCache()
 	if err != nil {
 		return err
@@ -302,7 +302,7 @@ func (c *Client) ReadKey(channel string, blockHash, recordHash []byte, output io
 	})
 }
 
-func (c *Client) ReadPayload(channel string, blockHash, recordHash []byte, output io.Writer) error {
+func (c *BCClient) ReadPayload(channel string, blockHash, recordHash []byte, output io.Writer) error {
 	cache, err := c.GetCache()
 	if err != nil {
 		return err
@@ -334,7 +334,7 @@ func (c *Client) ReadPayload(channel string, blockHash, recordHash []byte, outpu
 	})
 }
 
-func (c *Client) Write(channel string, accesses []string, input io.Reader) (int, error) {
+func (c *BCClient) Write(channel string, accesses []string, input io.Reader) (int, error) {
 	cache, err := c.GetCache()
 	if err != nil {
 		return 0, err
@@ -373,7 +373,7 @@ func (c *Client) Write(channel string, accesses []string, input io.Reader) (int,
 	return size, nil
 }
 
-func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningListener) ([]byte, error) {
+func (c *BCClient) Mine(channel string, threshold uint64, listener bcgo.MiningListener) ([]byte, error) {
 	cache, err := c.GetCache()
 	if err != nil {
 		return nil, err
@@ -402,7 +402,7 @@ func (c *Client) Mine(channel string, threshold uint64, listener bcgo.MiningList
 	return hash, nil
 }
 
-func (c *Client) Pull(channel string) error {
+func (c *BCClient) Pull(channel string) error {
 	cache, err := c.GetCache()
 	if err != nil {
 		return err
@@ -417,7 +417,7 @@ func (c *Client) Pull(channel string) error {
 	return ch.Pull(cache, network)
 }
 
-func (c *Client) Push(channel string) error {
+func (c *BCClient) Push(channel string) error {
 	cache, err := c.GetCache()
 	if err != nil {
 		return err
@@ -435,7 +435,7 @@ func (c *Client) Push(channel string) error {
 	return ch.Push(cache, network)
 }
 
-func (c *Client) Purge() error {
+func (c *BCClient) Purge() error {
 	rootDir, err := c.GetRoot()
 	if err != nil {
 		return err
@@ -448,7 +448,7 @@ func (c *Client) Purge() error {
 	return os.RemoveAll(dir)
 }
 
-func (c *Client) ImportKeys(peer, alias, accessCode string) error {
+func (c *BCClient) ImportKeys(peer, alias, accessCode string) error {
 	rootDir, err := c.GetRoot()
 	if err != nil {
 		return err
@@ -461,7 +461,7 @@ func (c *Client) ImportKeys(peer, alias, accessCode string) error {
 	return cryptogo.ImportKeys(peer, keystore, alias, accessCode)
 }
 
-func (c *Client) ExportKeys(peer, alias string) (string, error) {
+func (c *BCClient) ExportKeys(peer, alias string) (string, error) {
 	rootDir, err := c.GetRoot()
 	if err != nil {
 		return "", err

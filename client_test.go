@@ -95,7 +95,7 @@ func TestClientInit(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 		   root := testinggo.MakeEnvTempDir(t, "ROOT_DIRECTORY", "root")
 		   defer testinggo.UnmakeEnvTempDir(t, "ROOT_DIRECTORY", root)
-		   client := &main.Client{
+		   client := &main.BCClient{
 		       Root: root,
 		   }
 		   node, err := client.Init()
@@ -113,7 +113,7 @@ func TestClientAlias(t *testing.T) {
 		publicKeyBytes, err := cryptogo.RSAPublicKeyToPKIXBytes(&key.PublicKey)
 		testinggo.AssertNoError(t, err)
 		expected := base64.RawURLEncoding.EncodeToString(publicKeyBytes)
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Cache: cache,
 		}
 		actual, err := client.Alias("Alice")
@@ -124,7 +124,7 @@ func TestClientAlias(t *testing.T) {
 		}
 	})
 	t.Run("NotExists", func(t *testing.T) {
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Cache: bcgo.NewMemoryCache(2),
 		}
 		_, err := client.Alias("Alice")
@@ -135,7 +135,7 @@ func TestClientAlias(t *testing.T) {
 func TestClientHead(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		cache := bcgo.NewMemoryCache(2)
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Cache: cache,
 		}
 		block := &bcgo.Block{
@@ -158,7 +158,7 @@ func TestClientHead(t *testing.T) {
 		}
 	})
 	t.Run("NotExists", func(t *testing.T) {
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Cache: bcgo.NewMemoryCache(2),
 		}
 		_, err := client.Head("Test")
@@ -169,7 +169,7 @@ func TestClientHead(t *testing.T) {
 func TestClientBlock(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		cache := bcgo.NewMemoryCache(2)
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Cache: cache,
 		}
 		expected := &bcgo.Block{
@@ -186,7 +186,7 @@ func TestClientBlock(t *testing.T) {
 		}
 	})
 	t.Run("NotExists", func(t *testing.T) {
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Cache: bcgo.NewMemoryCache(2),
 		}
 		_, err := client.Block("Test", []byte("FooBar123"))
@@ -199,7 +199,7 @@ func TestClientRecord(t *testing.T) {
 	/*
 		t.Run("Exists", func(t *testing.T) {
 			cache := bcgo.NewMemoryCache(2)
-			client := &bcclientgo.Client{
+			client := &bcclientgo.BCClient{
 				Cache: cache,
 			}
 			record, err := client.Record("Test", hash)
@@ -207,7 +207,7 @@ func TestClientRecord(t *testing.T) {
 		})
 		t.Run("NotExists", func(t *testing.T) {
 			cache := bcgo.NewMemoryCache(2)
-			client := &bcclientgo.Client{
+			client := &bcclientgo.BCClient{
 				Cache: cache,
 			}
 			record, err := client.Record("Test", hash)
@@ -222,7 +222,7 @@ func TestClientWrite(t *testing.T) {
 		setAlias(t, root)
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Root:  root,
 			Cache: bcgo.NewMemoryCache(2),
 		}
@@ -238,7 +238,7 @@ func TestClientWrite(t *testing.T) {
 		setAlias(t, root)
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Root:  root,
 			Cache: bcgo.NewMemoryCache(2),
 		}
@@ -256,7 +256,7 @@ func TestClientWrite(t *testing.T) {
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		cache := bcgo.NewMemoryCache(2)
 		makeAlias(t, cache, "Alice")
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Root:  root,
 			Cache: cache,
 		}
@@ -274,7 +274,7 @@ func TestClientWrite(t *testing.T) {
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		cache := bcgo.NewMemoryCache(2)
 		/*key, _ := */ makeAlias(t, cache, "Alice")
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Root:  root,
 			Cache: cache,
 		}
@@ -293,7 +293,7 @@ func TestClientMine(t *testing.T) {
 		setAlias(t, root)
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Root:  root,
 			Cache: bcgo.NewMemoryCache(2),
 		}
@@ -305,7 +305,7 @@ func TestClientMine(t *testing.T) {
 		setAlias(t, root)
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Root:  root,
 			Cache: bcgo.NewMemoryCache(2),
 		}
@@ -338,7 +338,7 @@ func TestClientMine(t *testing.T) {
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		cache := bcgo.NewMemoryCache(2)
-		client := &bcclientgo.Client{
+		client := &bcclientgo.BCClient{
 			Root:  root,
 			Cache: cache,
 		}
