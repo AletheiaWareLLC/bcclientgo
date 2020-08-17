@@ -478,3 +478,13 @@ func (c *BCClient) ExportKeys(peer, alias string) (string, error) {
 	}
 	return cryptogo.ExportKeys(peer, keystore, alias, password)
 }
+
+func PrintNode(output io.Writer, node *bcgo.Node) error {
+	fmt.Fprintln(output, node.Alias)
+	publicKeyBytes, err := cryptogo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(output, base64.RawURLEncoding.EncodeToString(publicKeyBytes))
+	return nil
+}

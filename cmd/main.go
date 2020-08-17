@@ -355,13 +355,3 @@ func PrintLegalese(output io.Writer) {
 	fmt.Fprintln(output, "BC is made available by Aletheia Ware LLC [https://aletheiaware.com] under the Terms of Service [https://aletheiaware.com/terms-of-service.html] and Privacy Policy [https://aletheiaware.com/privacy-policy.html].")
 	fmt.Fprintln(output, "By continuing to use this software you agree to the Terms of Service, and Privacy Policy.")
 }
-
-func PrintNode(output io.Writer, node *bcgo.Node) error {
-	fmt.Fprintln(output, node.Alias)
-	publicKeyBytes, err := cryptogo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintln(output, base64.RawURLEncoding.EncodeToString(publicKeyBytes))
-	return nil
-}
