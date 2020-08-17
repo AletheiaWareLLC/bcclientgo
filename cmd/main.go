@@ -100,7 +100,7 @@ func main() {
 					return
 				}
 			} else {
-				log.Println("Usage: read [channel-name]")
+				log.Println("Usage: read-key [channel-name]")
 			}
 		case "read-payload":
 			if len(args) > 1 {
@@ -111,7 +111,7 @@ func main() {
 					return
 				}
 			} else {
-				log.Println("Usage: read [channel-name]")
+				log.Println("Usage: read-payload [channel-name]")
 			}
 		case "write":
 			if len(args) > 1 {
