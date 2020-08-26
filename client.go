@@ -165,10 +165,7 @@ func (c *BCClient) Alias(alias string) (string, error) {
 	}
 	// Open Alias Channel
 	aliases := aliasgo.OpenAliasChannel()
-	if err := aliases.LoadCachedHead(cache); err != nil {
-		log.Println(err)
-	}
-	if err := aliases.Pull(cache, network); err != nil {
+	if err := aliases.Refresh(cache, network); err != nil {
 		log.Println(err)
 	}
 	// Get Public Key for Alias
@@ -348,10 +345,7 @@ func (c *BCClient) Write(channel string, accesses []string, input io.Reader) (in
 	if len(accesses) > 0 {
 		// Open Alias Channel
 		aliases := aliasgo.OpenAliasChannel()
-		if err := aliases.LoadCachedHead(cache); err != nil {
-			log.Println(err)
-		}
-		if err := aliases.Pull(cache, network); err != nil {
+		if err := aliases.Refresh(cache, network); err != nil {
 			log.Println(err)
 		}
 		acl = aliasgo.GetPublicKeys(aliases, cache, network, accesses)
