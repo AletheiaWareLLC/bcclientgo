@@ -55,7 +55,7 @@ func main() {
 				return
 			}
 			log.Println("Initialized")
-			if err := PrintNode(os.Stdout, node); err != nil {
+			if err := bcclientgo.PrintNode(os.Stdout, node); err != nil {
 				log.Println(err)
 				return
 			}
@@ -65,7 +65,7 @@ func main() {
 				log.Println(err)
 				return
 			}
-			if err := PrintNode(os.Stdout, node); err != nil {
+			if err := bcclientgo.PrintNode(os.Stdout, node); err != nil {
 				log.Println(err)
 				return
 			}
