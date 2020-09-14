@@ -38,22 +38,6 @@ type BCClient struct {
 	Node    *bcgo.Node
 }
 
-func (c *BCClient) GetRoot() (string, error) {
-	if c.Root == "" {
-		log.Println("bcclientgo.BCClient.GetRoot()")
-		log.Println(os.Environ())
-		rootDir, err := bcgo.GetRootDirectory()
-		if err != nil {
-			return "", errors.New(fmt.Sprintf("Could not get root directory: %s\n", err.Error()))
-		}
-		if err := bcgo.ReadConfig(rootDir); err != nil {
-			log.Println("Error reading config:", err)
-		}
-		c.Root = rootDir
-	}
-	return c.Root, nil
-}
-
 func (c *BCClient) GetDefaultPeers() ([]string, error) {
 	rootDir, err := c.GetRoot()
 	if err != nil {
