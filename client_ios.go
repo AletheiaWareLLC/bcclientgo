@@ -34,6 +34,11 @@ func (c *BCClient) GetRoot() (string, error) {
 				os.Setenv("CACHE_DIRECTORY") = cacheDir
 			}
 		}
+		root, err := rootDir()
+		if err != nil {
+			return "", err
+		}
+		c.Root = root
 	}
-	return c.GetRoot()
+	return c.Root, nil
 }

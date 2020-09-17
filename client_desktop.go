@@ -20,8 +20,6 @@
 package bcclientgo
 
 import (
-	"fmt"
-	"github.com/AletheiaWareLLC/bcgo"
 	"log"
 	"os"
 )
@@ -30,14 +28,11 @@ func (c *BCClient) GetRoot() (string, error) {
 	if c.Root == "" {
 		log.Println("bcclientgo.BCClient.GetRoot()")
 		log.Println(os.Environ())
-		rootDir, err := bcgo.GetRootDirectory()
+		root, err := rootDir()
 		if err != nil {
-			return "", fmt.Errorf("Could not get root directory: %s\n", err.Error())
+			return "", err
 		}
-		if err := bcgo.ReadConfig(rootDir); err != nil {
-			log.Println("Error reading config:", err)
-		}
-		c.Root = rootDir
+		c.Root = root
 	}
 	return c.Root, nil
 }

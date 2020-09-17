@@ -28,8 +28,13 @@ func (c *BCClient) GetRoot() (string, error) {
 		if _, ok := os.LookupEnv("CACHE_DIRECTORY"); !ok {
 			os.Setenv("CACHE_DIRECTORY", os.Getenv("TMPDIR"))
 		}
+		root, err := rootDir()
+		if err != nil {
+			return "", err
+		}
+		c.Root = root
 	}
-	return c.GetRoot()
+	return c.Root, nil
 }
 
 //func (c *BCClient) RecordCameraWriteToBC()

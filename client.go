@@ -466,3 +466,14 @@ func PrintNode(output io.Writer, node *bcgo.Node) error {
 	fmt.Fprintln(output, base64.RawURLEncoding.EncodeToString(publicKeyBytes))
 	return nil
 }
+
+func rootDir() (string, error) {
+	rootDir, err := bcgo.GetRootDirectory()
+	if err != nil {
+		return "", fmt.Errorf("Could not get root directory: %s\n", err.Error())
+	}
+	if err := bcgo.ReadConfig(rootDir); err != nil {
+		log.Println("Error reading config:", err)
+	}
+	return rootDir, nil
+}
