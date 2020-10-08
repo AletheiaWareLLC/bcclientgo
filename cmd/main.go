@@ -300,7 +300,13 @@ func main() {
 						p = ps[0]
 					}
 				}
-				accessCode, err := client.ExportKeys(p, args[1])
+				// Get Password
+				password, err := cryptogo.GetPassword()
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				accessCode, err := client.ExportKeys(p, args[1], password)
 				if err != nil {
 					log.Println(err)
 					return

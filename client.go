@@ -439,18 +439,13 @@ func (c *BCClient) ImportKeys(peer, alias, accessCode string) error {
 	return cryptogo.ImportKeys(peer, keystore, alias, accessCode)
 }
 
-func (c *BCClient) ExportKeys(peer, alias string) (string, error) {
+func (c *BCClient) ExportKeys(peer, alias string, password []byte) (string, error) {
 	rootDir, err := c.GetRoot()
 	if err != nil {
 		return "", err
 	}
 	// Get KeyStore
 	keystore, err := bcgo.GetKeyDirectory(rootDir)
-	if err != nil {
-		return "", err
-	}
-	// Get Password
-	password, err := cryptogo.GetPassword()
 	if err != nil {
 		return "", err
 	}
