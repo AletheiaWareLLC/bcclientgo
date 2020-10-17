@@ -38,6 +38,17 @@ type BCClient struct {
 	Node    *bcgo.Node
 }
 
+func NewBCClient(peers ...string) *BCClient {
+	if len(peers) == 0 {
+		peers = append(peers,
+			bcgo.GetBCHost(), // Add BC host as peer
+		)
+	}
+	return &BCClient{
+		Peers: peers,
+	}
+}
+
 func (c *BCClient) GetDefaultPeers() ([]string, error) {
 	rootDir, err := c.GetRoot()
 	if err != nil {

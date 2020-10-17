@@ -40,16 +40,7 @@ func main() {
 	// Set log flags
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	peers := bcgo.SplitRemoveEmpty(*peer, ",")
-	if len(peers) == 0 {
-		peers = append(peers,
-			bcgo.GetBCHost(), // Add BC host as peer
-		)
-	}
-
-	client := &bcclientgo.BCClient{
-		Peers: peers,
-	}
+	client := bcclientgo.NewBCClient(bcgo.SplitRemoveEmpty(*peer, ",")...)
 
 	args := flag.Args()
 
