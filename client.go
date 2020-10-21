@@ -105,7 +105,7 @@ func (c *BCClient) GetNode() (*bcgo.Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		node, err := bcgo.GetNode(rootDir, cache, network)
+		node, err := bcgo.NewNode(rootDir, cache, network)
 		if err != nil {
 			return nil, err
 		}
@@ -184,9 +184,7 @@ func (c *BCClient) Head(channel string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	ch := &bcgo.Channel{
-		Name: channel,
-	}
+	ch := bcgo.NewChannel(channel)
 	if err := ch.LoadHead(cache, network); err != nil {
 		return nil, err
 	}
@@ -244,9 +242,7 @@ func (c *BCClient) Read(channel string, blockHash, recordHash []byte, output io.
 		return err
 	}
 
-	ch := &bcgo.Channel{
-		Name: channel,
-	}
+	ch := bcgo.NewChannel(channel)
 
 	if err := ch.LoadHead(cache, network); err != nil {
 		log.Println(err)
@@ -276,9 +272,7 @@ func (c *BCClient) ReadKey(channel string, blockHash, recordHash []byte, output 
 		return err
 	}
 
-	ch := &bcgo.Channel{
-		Name: channel,
-	}
+	ch := bcgo.NewChannel(channel)
 
 	if err := ch.LoadHead(cache, network); err != nil {
 		log.Println(err)
@@ -308,9 +302,7 @@ func (c *BCClient) ReadPayload(channel string, blockHash, recordHash []byte, out
 		return err
 	}
 
-	ch := &bcgo.Channel{
-		Name: channel,
-	}
+	ch := bcgo.NewChannel(channel)
 
 	if err := ch.LoadHead(cache, network); err != nil {
 		log.Println(err)
@@ -376,9 +368,7 @@ func (c *BCClient) Mine(channel string, threshold uint64, listener bcgo.MiningLi
 		return nil, err
 	}
 
-	ch := &bcgo.Channel{
-		Name: channel,
-	}
+	ch := bcgo.NewChannel(channel)
 
 	if err := ch.LoadHead(cache, network); err != nil {
 		log.Println(err)
@@ -400,9 +390,7 @@ func (c *BCClient) Pull(channel string) error {
 	if err != nil {
 		return err
 	}
-	ch := &bcgo.Channel{
-		Name: channel,
-	}
+	ch := bcgo.NewChannel(channel)
 	return ch.Pull(cache, network)
 }
 
@@ -415,9 +403,7 @@ func (c *BCClient) Push(channel string) error {
 	if err != nil {
 		return err
 	}
-	ch := &bcgo.Channel{
-		Name: channel,
-	}
+	ch := bcgo.NewChannel(channel)
 	if err := ch.LoadHead(cache, nil); err != nil {
 		return err
 	}
