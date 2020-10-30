@@ -19,15 +19,8 @@
 
 package bcclientgo
 
-import (
-	"log"
-	"os"
-)
-
 func (c *BCClient) GetRoot() (string, error) {
 	if c.Root == "" {
-		log.Println("bcclientgo.BCClient.GetRoot()")
-		log.Println(os.Environ())
 		root, err := rootDir()
 		if err != nil {
 			return "", err
