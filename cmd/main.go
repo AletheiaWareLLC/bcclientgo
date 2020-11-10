@@ -154,6 +154,18 @@ func main() {
 			} else {
 				log.Println("Usage: head [channel-name]")
 			}
+		case "chain":
+			if len(args) > 1 {
+				if err := client.Chain(args[1], func(hash []byte, block *bcgo.Block) error {
+					log.Println(block.Length, base64.RawURLEncoding.EncodeToString(hash))
+					return nil
+				}); err != nil {
+					log.Println(err)
+					return
+				}
+			} else {
+				log.Println("Usage: chain [channel-name]")
+			}
 		case "block":
 			if len(args) > 2 {
 				hash, err := base64.RawURLEncoding.DecodeString(args[2])
@@ -337,6 +349,7 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintf(output, "\t%s push [channel] - pushes the channel to peers\n", os.Args[0])
 	fmt.Fprintf(output, "\t%s pull [channel] - pulls the channel from peers\n", os.Args[0])
 	fmt.Fprintf(output, "\t%s head [channel] - display head of given channel\n", os.Args[0])
+	fmt.Fprintf(output, "\t%s chain [channel] - display chain of given channel\n", os.Args[0])
 	fmt.Fprintf(output, "\t%s block [channel] [block-hash] - display block with given hash\n", os.Args[0])
 	fmt.Fprintf(output, "\t%s record [channel] [record-hash] - display record with given hash\n", os.Args[0])
 	fmt.Fprintln(output)

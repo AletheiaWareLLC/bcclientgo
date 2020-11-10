@@ -191,6 +191,22 @@ func (c *BCClient) Head(channel string) ([]byte, error) {
 	return ch.Head, nil
 }
 
+func (c *BCClient) Chain(channel string, callback func([]byte, *bcgo.Block) error) error {
+	cache, err := c.GetCache()
+	if err != nil {
+		return err
+	}
+	network, err := c.GetNetwork()
+	if err != nil {
+		return err
+	}
+	ch := bcgo.NewChannel(channel)
+	if err := ch.LoadHead(cache, network); err != nil {
+		return err
+	}
+	return bcgo.Iterate(channel, ch.Head, nil, cache, network, callback)
+}
+
 func (c *BCClient) Block(channel string, hash []byte) (*bcgo.Block, error) {
 	cache, err := c.GetCache()
 	if err != nil {
