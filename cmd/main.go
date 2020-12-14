@@ -320,7 +320,7 @@ func main() {
 				log.Println("Usage: export-keys [alias]")
 			}
 		case "random":
-			random, err := cryptogo.GenerateRandomKey()
+			random, err := cryptogo.GenerateRandomKey(cryptogo.AES_256_KEY_SIZE_BYTES)
 			if err != nil {
 				log.Println(err)
 				return
