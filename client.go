@@ -69,11 +69,11 @@ func (c *BCClient) GetCache() (bcgo.Cache, error) {
 		}
 		cacheDir, err := bcgo.GetCacheDirectory(rootDir)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Could not get cache directory: %s\n", err.Error()))
+			return nil, fmt.Errorf("Could not get cache directory: %s", err.Error())
 		}
 		cache, err := bcgo.NewFileCache(cacheDir)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Could not create file cache: %s\n", err.Error()))
+			return nil, fmt.Errorf("Could not create file cache: %s", err.Error())
 		}
 		c.Cache = cache
 	}
