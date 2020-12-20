@@ -118,6 +118,15 @@ func (c *BCClient) SetRoot(root string) {
 
 func (c *BCClient) SetPeers(peers ...string) {
 	c.Peers = peers
+	if c.Network != nil {
+		if n, ok := c.Network.(*bcgo.TCPNetwork); ok {
+			for _, p := range peers {
+				if _, ok := n.Peers[p]; !ok {
+					n.AddPeer(p)
+				}
+			}
+		}
+	}
 }
 
 func (c *BCClient) SetCache(cache bcgo.Cache) {
