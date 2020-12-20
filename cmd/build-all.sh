@@ -19,8 +19,8 @@ set -x
 
 go fmt $GOPATH/src/github.com/AletheiaWareLLC/bcclientgo/cmd
 go test $GOPATH/src/github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=darwin GOARCH=386 go build -o $GOPATH/bin/bcclientgo-darwin-386 github.com/AletheiaWareLLC/bcclientgo/cmd
 env GOOS=darwin GOARCH=amd64 go build -o $GOPATH/bin/bcclientgo-darwin-amd64 github.com/AletheiaWareLLC/bcclientgo/cmd
+# TODO env GOOS=darwin GOARCH=arm64 go build -o $GOPATH/bin/bcclientgo-darwin-arm64 github.com/AletheiaWareLLC/bcclientgo/cmd
 env GOOS=linux GOARCH=386 go build -o $GOPATH/bin/bcclientgo-linux-386 github.com/AletheiaWareLLC/bcclientgo/cmd
 env GOOS=linux GOARCH=amd64 go build -o $GOPATH/bin/bcclientgo-linux-amd64 github.com/AletheiaWareLLC/bcclientgo/cmd
 env GOOS=linux GOARCH=arm GOARM=5 go build -o $GOPATH/bin/bcclientgo-linux-arm5 github.com/AletheiaWareLLC/bcclientgo/cmd
