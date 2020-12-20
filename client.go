@@ -39,6 +39,12 @@ type BCClient struct {
 }
 
 func NewBCClient(peers ...string) *BCClient {
+	/* TODO try loading from file system
+		rootDir, err := c.GetRoot()
+		if err == nil {
+			bcgo.GetPeers(rootDir)
+	}
+	*/
 	if len(peers) == 0 {
 		peers = append(peers,
 			bcgo.GetBCHost(), // Add BC host as peer
@@ -47,14 +53,6 @@ func NewBCClient(peers ...string) *BCClient {
 	return &BCClient{
 		Peers: peers,
 	}
-}
-
-func (c *BCClient) GetDefaultPeers() ([]string, error) {
-	rootDir, err := c.GetRoot()
-	if err != nil {
-		return nil, err
-	}
-	return bcgo.GetPeers(rootDir)
 }
 
 func (c *BCClient) GetPeers() ([]string, error) {
