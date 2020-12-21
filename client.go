@@ -28,6 +28,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
 )
 
 type BCClient struct {
@@ -79,7 +80,7 @@ func (c *BCClient) GetCache() (bcgo.Cache, error) {
 }
 
 func (c *BCClient) GetNetwork() (bcgo.Network, error) {
-	if c.Network == nil {
+	if c.Network == nil || reflect.ValueOf(c.Network).IsNil() {
 		peers, err := c.GetPeers()
 		if err != nil {
 			return nil, err
@@ -118,10 +119,11 @@ func (c *BCClient) SetRoot(root string) {
 
 func (c *BCClient) SetPeers(peers ...string) {
 	c.Peers = peers
-	if c.Network != nil {
-		if n, ok := c.Network.(*bcgo.TCPNetwork); ok {
-			n.SetPeers(peers...)
-		}
+	if c.Network == nil || reflect.ValueOf(c.Network).IsNil() {
+		return
+	}
+	if n, ok := c.Network.(*bcgo.TCPNetwork); ok {
+		n.SetPeers(peers...)
 	}
 }
 
