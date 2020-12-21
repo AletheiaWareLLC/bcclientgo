@@ -29,6 +29,7 @@ import (
 	"github.com/AletheiaWareLLC/testinggo"
 	"os"
 	"testing"
+	"time"
 )
 
 // TODO split/move
@@ -89,17 +90,27 @@ func unsetAlias(t *testing.T) {
 	os.Unsetenv("PASSWORD")
 }
 
+func makeNetwork(t *testing.T) *bcgo.TCPNetwork {
+	t.Helper()
+	return &bcgo.TCPNetwork{
+		Peers:       make(map[string]int),
+		DialTimeout: time.Second,
+		GetTimeout:  time.Second,
+	}
+}
+
 func TestClientInit(t *testing.T) {
 	// TODO set ROOT_DIRECTORY, ALIAS env
 	/*
 		t.Run("Success", func(t *testing.T) {
-		   root := testinggo.MakeEnvTempDir(t, "ROOT_DIRECTORY", "root")
-		   defer testinggo.UnmakeEnvTempDir(t, "ROOT_DIRECTORY", root)
-		   client := &main.BCClient{
-		       Root: root,
-		   }
-		   node, err := client.Init()
-		   testinggo.AssertNoError(t, err)
+			root := testinggo.MakeEnvTempDir(t, "ROOT_DIRECTORY", "root")
+			defer testinggo.UnmakeEnvTempDir(t, "ROOT_DIRECTORY", root)
+			client := &main.BCClient{
+				Root:    root,
+				Network: makeNetwork(t),
+			}
+			node, err := client.Init()
+			testinggo.AssertNoError(t, err)
 		})
 		t.Run("AliasAlreadyRegistered", func(t *testing.T) {
 		})
@@ -114,7 +125,8 @@ func TestClientAlias(t *testing.T) {
 		testinggo.AssertNoError(t, err)
 		expected := base64.RawURLEncoding.EncodeToString(publicKeyBytes)
 		client := &bcclientgo.BCClient{
-			Cache: cache,
+			Cache:   cache,
+			Network: makeNetwork(t),
 		}
 		actual, err := client.Alias("Alice")
 		testinggo.AssertNoError(t, err)
@@ -125,7 +137,8 @@ func TestClientAlias(t *testing.T) {
 	})
 	t.Run("NotExists", func(t *testing.T) {
 		client := &bcclientgo.BCClient{
-			Cache: bcgo.NewMemoryCache(2),
+			Cache:   bcgo.NewMemoryCache(2),
+			Network: makeNetwork(t),
 		}
 		_, err := client.Alias("Alice")
 		testinggo.AssertError(t, aliasgo.ERROR_PUBLIC_KEY_NOT_FOUND, err)
@@ -136,7 +149,8 @@ func TestClientHead(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		cache := bcgo.NewMemoryCache(2)
 		client := &bcclientgo.BCClient{
-			Cache: cache,
+			Cache:   cache,
+			Network: makeNetwork(t),
 		}
 		block := &bcgo.Block{
 			Timestamp:   1234,
@@ -159,7 +173,8 @@ func TestClientHead(t *testing.T) {
 	})
 	t.Run("NotExists", func(t *testing.T) {
 		client := &bcclientgo.BCClient{
-			Cache: bcgo.NewMemoryCache(2),
+			Cache:   bcgo.NewMemoryCache(2),
+			Network: makeNetwork(t),
 		}
 		_, err := client.Head("Test")
 		testinggo.AssertError(t, "Could not get Test head from peers", err)
@@ -170,7 +185,8 @@ func TestClientBlock(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		cache := bcgo.NewMemoryCache(2)
 		client := &bcclientgo.BCClient{
-			Cache: cache,
+			Cache:   cache,
+			Network: makeNetwork(t),
 		}
 		expected := &bcgo.Block{
 			ChannelName: "Test",
@@ -187,7 +203,8 @@ func TestClientBlock(t *testing.T) {
 	})
 	t.Run("NotExists", func(t *testing.T) {
 		client := &bcclientgo.BCClient{
-			Cache: bcgo.NewMemoryCache(2),
+			Cache:   bcgo.NewMemoryCache(2),
+			Network: makeNetwork(t),
 		}
 		_, err := client.Block("Test", []byte("FooBar123"))
 		testinggo.AssertError(t, "Could not get Test block from peers", err)
@@ -200,7 +217,8 @@ func TestClientRecord(t *testing.T) {
 		t.Run("Exists", func(t *testing.T) {
 			cache := bcgo.NewMemoryCache(2)
 			client := &bcclientgo.BCClient{
-				Cache: cache,
+				Cache:   cache,
+				Network: makeNetwork(t),
 			}
 			record, err := client.Record("Test", hash)
 			testinggo.AssertNoError(t, err)
@@ -208,7 +226,8 @@ func TestClientRecord(t *testing.T) {
 		t.Run("NotExists", func(t *testing.T) {
 			cache := bcgo.NewMemoryCache(2)
 			client := &bcclientgo.BCClient{
-				Cache: cache,
+				Cache:   cache,
+				Network: makeNetwork(t),
 			}
 			record, err := client.Record("Test", hash)
 			testinggo.AssertNoError(t, err)
@@ -223,8 +242,9 @@ func TestClientWrite(t *testing.T) {
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		client := &bcclientgo.BCClient{
-			Root:  root,
-			Cache: bcgo.NewMemoryCache(2),
+			Root:    root,
+			Cache:   bcgo.NewMemoryCache(2),
+			Network: makeNetwork(t),
 		}
 		buffer := &bytes.Buffer{}
 		size, err := client.Write("Test", nil, buffer)
@@ -239,8 +259,9 @@ func TestClientWrite(t *testing.T) {
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		client := &bcclientgo.BCClient{
-			Root:  root,
-			Cache: bcgo.NewMemoryCache(2),
+			Root:    root,
+			Cache:   bcgo.NewMemoryCache(2),
+			Network: makeNetwork(t),
 		}
 		buffer := bytes.NewBufferString("FooBar123")
 		size, err := client.Write("Test", nil, buffer)
@@ -257,8 +278,9 @@ func TestClientWrite(t *testing.T) {
 		cache := bcgo.NewMemoryCache(2)
 		makeAlias(t, cache, "Alice")
 		client := &bcclientgo.BCClient{
-			Root:  root,
-			Cache: cache,
+			Root:    root,
+			Cache:   cache,
+			Network: makeNetwork(t),
 		}
 		buffer := &bytes.Buffer{}
 		size, err := client.Write("Test", []string{"Alice"}, buffer)
@@ -275,8 +297,9 @@ func TestClientWrite(t *testing.T) {
 		cache := bcgo.NewMemoryCache(2)
 		/*key, _ := */ makeAlias(t, cache, "Alice")
 		client := &bcclientgo.BCClient{
-			Root:  root,
-			Cache: cache,
+			Root:    root,
+			Cache:   cache,
+			Network: makeNetwork(t),
 		}
 		buffer := bytes.NewBufferString("FooBar123")
 		size, err := client.Write("Test", []string{"Alice"}, buffer)
@@ -294,8 +317,9 @@ func TestClientMine(t *testing.T) {
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		client := &bcclientgo.BCClient{
-			Root:  root,
-			Cache: bcgo.NewMemoryCache(2),
+			Root:    root,
+			Cache:   bcgo.NewMemoryCache(2),
+			Network: makeNetwork(t),
 		}
 		_, err := client.Mine("Test", 1, nil)
 		testinggo.AssertError(t, fmt.Sprintf(bcgo.ERROR_NO_ENTRIES_TO_MINE, "Test"), err)
@@ -306,8 +330,9 @@ func TestClientMine(t *testing.T) {
 		defer unsetAlias(t)
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		client := &bcclientgo.BCClient{
-			Root:  root,
-			Cache: bcgo.NewMemoryCache(2),
+			Root:    root,
+			Cache:   bcgo.NewMemoryCache(2),
+			Network: makeNetwork(t),
 		}
 
 		record := &bcgo.Record{
@@ -339,8 +364,9 @@ func TestClientMine(t *testing.T) {
 		defer testinggo.UnmakeEnvTempDir(t, "ROOT", root)
 		cache := bcgo.NewMemoryCache(2)
 		client := &bcclientgo.BCClient{
-			Root:  root,
-			Cache: cache,
+			Root:    root,
+			Cache:   cache,
+			Network: makeNetwork(t),
 		}
 
 		record1 := &bcgo.Record{
