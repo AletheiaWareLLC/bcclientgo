@@ -17,16 +17,16 @@
 package bcclientgo_test
 
 import (
+	"aletheiaware.com/aliasgo"
+	"aletheiaware.com/bcclientgo"
+	"aletheiaware.com/bcgo"
+	"aletheiaware.com/cryptogo"
+	"aletheiaware.com/testinggo"
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
 	"fmt"
-	"github.com/AletheiaWareLLC/aliasgo"
-	"github.com/AletheiaWareLLC/bcclientgo"
-	"github.com/AletheiaWareLLC/bcgo"
-	"github.com/AletheiaWareLLC/cryptogo"
-	"github.com/AletheiaWareLLC/testinggo"
 	"os"
 	"testing"
 	"time"
@@ -177,7 +177,7 @@ func TestClientHead(t *testing.T) {
 			Network: makeNetwork(t),
 		}
 		_, err := client.Head("Test")
-		testinggo.AssertError(t, "Could not get Test head from peers", err)
+		testinggo.AssertError(t, "Could not get Test from peers", err)
 	})
 }
 

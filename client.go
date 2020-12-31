@@ -17,14 +17,14 @@
 package bcclientgo
 
 import (
+	"aletheiaware.com/aliasgo"
+	"aletheiaware.com/bcgo"
+	"aletheiaware.com/cryptogo"
 	"bytes"
 	"crypto/rsa"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/AletheiaWareLLC/aliasgo"
-	"github.com/AletheiaWareLLC/bcgo"
-	"github.com/AletheiaWareLLC/cryptogo"
 	"io"
 	"log"
 	"os"

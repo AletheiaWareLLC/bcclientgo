@@ -17,15 +17,15 @@
 set -e
 set -x
 
-go fmt $GOPATH/src/github.com/AletheiaWareLLC/bcclientgo/cmd
-go test $GOPATH/src/github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=darwin GOARCH=amd64 go build -o $GOPATH/bin/bcclientgo-darwin-amd64 github.com/AletheiaWareLLC/bcclientgo/cmd
-# TODO env GOOS=darwin GOARCH=arm64 go build -o $GOPATH/bin/bcclientgo-darwin-arm64 github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=linux GOARCH=386 go build -o $GOPATH/bin/bcclientgo-linux-386 github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=linux GOARCH=amd64 go build -o $GOPATH/bin/bcclientgo-linux-amd64 github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=linux GOARCH=arm GOARM=5 go build -o $GOPATH/bin/bcclientgo-linux-arm5 github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=linux GOARCH=arm GOARM=6 go build -o $GOPATH/bin/bcclientgo-linux-arm6 github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=linux GOARCH=arm GOARM=7 go build -o $GOPATH/bin/bcclientgo-linux-arm7 github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=linux GOARCH=arm64 go build -o $GOPATH/bin/bcclientgo-linux-arm8 github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=windows GOARCH=386 go build -o $GOPATH/bin/bcclientgo-windows-386.exe github.com/AletheiaWareLLC/bcclientgo/cmd
-env GOOS=windows GOARCH=amd64 go build -o $GOPATH/bin/bcclientgo-windows-amd64.exe github.com/AletheiaWareLLC/bcclientgo/cmd
+go fmt $GOPATH/src/aletheiaware.com/bcclientgo/cmd
+go test $GOPATH/src/aletheiaware.com/bcclientgo/cmd
+env GOOS=darwin GOARCH=amd64 go build -o $GOPATH/bin/bcclientgo-darwin-amd64 aletheiaware.com/bcclientgo/cmd
+# TODO env GOOS=darwin GOARCH=arm64 go build -o $GOPATH/bin/bcclientgo-darwin-arm64 aletheiaware.com/bcclientgo/cmd
+env GOOS=linux GOARCH=386 go build -o $GOPATH/bin/bcclientgo-linux-386 aletheiaware.com/bcclientgo/cmd
+env GOOS=linux GOARCH=amd64 go build -o $GOPATH/bin/bcclientgo-linux-amd64 aletheiaware.com/bcclientgo/cmd
+env GOOS=linux GOARCH=arm GOARM=5 go build -o $GOPATH/bin/bcclientgo-linux-arm5 aletheiaware.com/bcclientgo/cmd
+env GOOS=linux GOARCH=arm GOARM=6 go build -o $GOPATH/bin/bcclientgo-linux-arm6 aletheiaware.com/bcclientgo/cmd
+env GOOS=linux GOARCH=arm GOARM=7 go build -o $GOPATH/bin/bcclientgo-linux-arm7 aletheiaware.com/bcclientgo/cmd
+env GOOS=linux GOARCH=arm64 go build -o $GOPATH/bin/bcclientgo-linux-arm8 aletheiaware.com/bcclientgo/cmd
+env GOOS=windows GOARCH=386 go build -o $GOPATH/bin/bcclientgo-windows-386.exe aletheiaware.com/bcclientgo/cmd
+env GOOS=windows GOARCH=amd64 go build -o $GOPATH/bin/bcclientgo-windows-amd64.exe aletheiaware.com/bcclientgo/cmd

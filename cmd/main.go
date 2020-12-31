@@ -17,12 +17,12 @@
 package main
 
 import (
+	"aletheiaware.com/bcclientgo"
+	"aletheiaware.com/bcgo"
+	"aletheiaware.com/cryptogo"
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"github.com/AletheiaWareLLC/bcclientgo"
-	"github.com/AletheiaWareLLC/bcgo"
-	"github.com/AletheiaWareLLC/cryptogo"
 	"io"
 	"log"
 	"os"

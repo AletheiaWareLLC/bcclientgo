@@ -17,6 +17,6 @@
 set -e
 set -x
 
-go fmt $GOPATH/src/github.com/AletheiaWareLLC/bcclientgo/cmd
-go test $GOPATH/src/github.com/AletheiaWareLLC/bcclientgo/cmd
-go install github.com/AletheiaWareLLC/bcclientgo/cmd
+go fmt $GOPATH/src/aletheiaware.com/bcclientgo/cmd
+go test $GOPATH/src/aletheiaware.com/bcclientgo/cmd
+go install aletheiaware.com/bcclientgo/cmd
