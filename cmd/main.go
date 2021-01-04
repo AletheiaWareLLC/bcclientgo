@@ -222,6 +222,7 @@ func main() {
 			rootDir, err := client.GetRoot()
 			if err != nil {
 				log.Println(err)
+				return
 			}
 			dir, err := bcgo.GetCacheDirectory(rootDir)
 			if err != nil {
@@ -244,6 +245,7 @@ func main() {
 			rootDir, err := client.GetRoot()
 			if err != nil {
 				log.Println(err)
+				return
 			}
 			keystore, err := bcgo.GetKeyDirectory(rootDir)
 			if err != nil {
@@ -268,6 +270,7 @@ func main() {
 				rootDir, err := client.GetRoot()
 				if err != nil {
 					log.Println(err)
+					return
 				}
 				if err := bcgo.AddPeer(rootDir, args[1]); err != nil {
 					log.Println(err)
@@ -277,6 +280,26 @@ func main() {
 			} else {
 				log.Println("Usage: add-peer [peer]")
 			}
+		case "keys":
+			rootDir, err := client.GetRoot()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			keystore, err := bcgo.GetKeyDirectory(rootDir)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			keys, err := cryptogo.ListRSAPrivateKeys(keystore)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			for _, k := range keys {
+				log.Println(k)
+			}
+			log.Println(len(keys), "keys")
 		case "import-keys":
 			if len(args) > 2 {
 				p := bcgo.GetBCWebsite()
@@ -342,7 +365,7 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintf(output, "\t%s node - display registered alias and public key\n", os.Args[0])
 	fmt.Fprintf(output, "\t%s alias [alias] - display public key for given alias\n", os.Args[0])
 	fmt.Fprintln(output)
-	// TODO fmt.Fprintf(output, "\t%s keys - display all available keys\n", os.Args[0])
+	fmt.Fprintf(output, "\t%s keys - display all stored keys\n", os.Args[0])
 	fmt.Fprintf(output, "\t%s import-keys [alias] [access-code] - imports the alias and keypair from BC server\n", os.Args[0])
 	fmt.Fprintf(output, "\t%s export-keys [alias] - generates a new access code and exports the alias and keypair to BC server\n", os.Args[0])
 	fmt.Fprintln(output)
