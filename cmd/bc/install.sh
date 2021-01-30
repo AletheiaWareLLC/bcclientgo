@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Aletheia Ware LLC
+# Copyright 2020-2021 Aletheia Ware LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,6 @@
 set -e
 set -x
 
-go fmt $GOPATH/src/aletheiaware.com/bcclientgo/cmd
-go test $GOPATH/src/aletheiaware.com/bcclientgo/cmd
-go build aletheiaware.com/bcclientgo/cmd
+go fmt $GOPATH/src/aletheiaware.com/bcclientgo/{,cmd/bc}
+go test $GOPATH/src/aletheiaware.com/bcclientgo/{,cmd/bc}
+go install -tags release aletheiaware.com/bcclientgo/cmd/bc
