@@ -93,7 +93,6 @@ func unsetAlias(t *testing.T) {
 func makeNetwork(t *testing.T) *bcgo.TCPNetwork {
 	t.Helper()
 	return &bcgo.TCPNetwork{
-		Peers:       make(map[string]int),
 		DialTimeout: time.Second,
 		GetTimeout:  time.Second,
 	}
