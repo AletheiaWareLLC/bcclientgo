@@ -140,7 +140,7 @@ func TestClientAlias(t *testing.T) {
 			Network: makeNetwork(t),
 		}
 		_, err := client.Alias("Alice")
-		testinggo.AssertError(t, aliasgo.ERROR_PUBLIC_KEY_NOT_FOUND, err)
+		testinggo.AssertError(t, fmt.Sprintf(aliasgo.ERROR_PUBLIC_KEY_NOT_FOUND, "Alice"), err)
 	})
 }
 
