@@ -59,7 +59,7 @@ func main() {
 				return
 			}
 		case "node":
-			node, err := client.GetNode()
+			node, err := client.Node()
 			if err != nil {
 				log.Println(err)
 				return
@@ -70,12 +70,12 @@ func main() {
 			}
 		case "alias":
 			if len(args) > 1 {
-				key, err := client.Alias(args[1])
+				bytes, format, err := client.PublicKey(args[1])
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				log.Println(key)
+				log.Println(base64.RawURLEncoding.EncodeToString(bytes), format)
 			} else {
 				log.Println("Usage: alias [alias]")
 			}
@@ -219,12 +219,12 @@ func main() {
 				log.Println("Usage: push [channel-name]")
 			}
 		case "cache":
-			rootDir, err := client.GetRoot()
+			rootDir, err := client.Root()
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			dir, err := bcgo.GetCacheDirectory(rootDir)
+			dir, err := bcgo.CacheDirectory(rootDir)
 			if err != nil {
 				log.Println(err)
 				return
@@ -242,12 +242,12 @@ func main() {
 			}
 			log.Println("Cache purged")
 		case "keystore":
-			rootDir, err := client.GetRoot()
+			rootDir, err := client.Root()
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			keystore, err := bcgo.GetKeyDirectory(rootDir)
+			keystore, err := bcgo.KeyDirectory(rootDir)
 			if err != nil {
 				log.Println(err)
 				return
@@ -259,15 +259,10 @@ func main() {
 			}
 			log.Println("KeyStore:", keystore)
 		case "peers":
-			peers, err := client.GetPeers()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			log.Println("Peers:", strings.Join(peers, ", "))
+			log.Println("Peers:", strings.Join(client.Peers(), ", "))
 		case "add-peer":
 			if len(args) > 1 {
-				rootDir, err := client.GetRoot()
+				rootDir, err := client.Root()
 				if err != nil {
 					log.Println(err)
 					return
@@ -281,12 +276,12 @@ func main() {
 				log.Println("Usage: add-peer [peer]")
 			}
 		case "keys":
-			rootDir, err := client.GetRoot()
+			rootDir, err := client.Root()
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			keystore, err := bcgo.GetKeyDirectory(rootDir)
+			keystore, err := bcgo.KeyDirectory(rootDir)
 			if err != nil {
 				log.Println(err)
 				return
@@ -302,7 +297,7 @@ func main() {
 			log.Println(len(keys), "keys")
 		case "import-keys":
 			if len(args) > 2 {
-				p := bcgo.GetBCWebsite()
+				p := bcgo.BCWebsite()
 				if *peer != "" {
 					ps := bcgo.SplitRemoveEmpty(*peer, ",")
 					if len(ps) > 0 {
@@ -319,7 +314,7 @@ func main() {
 			}
 		case "export-keys":
 			if len(args) > 1 {
-				p := bcgo.GetBCWebsite()
+				p := bcgo.BCWebsite()
 				if *peer != "" {
 					ps := bcgo.SplitRemoveEmpty(*peer, ",")
 					if len(ps) > 0 {
@@ -327,7 +322,7 @@ func main() {
 					}
 				}
 				// Get Password
-				password, err := cryptogo.GetPassword()
+				password, err := cryptogo.Password()
 				if err != nil {
 					log.Println(err)
 					return
