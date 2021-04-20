@@ -27,7 +27,6 @@ import (
 	"aletheiaware.com/testinggo"
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -143,7 +142,7 @@ func TestClientAlias(t *testing.T) {
 		client.SetCache(cache.NewMemory(2))
 		client.SetNetwork(makeNetwork(t))
 		_, _, err := client.PublicKey("Alice")
-		testinggo.AssertError(t, fmt.Sprintf(aliasgo.ERROR_PUBLIC_KEY_NOT_FOUND, "Alice"), err)
+		testinggo.AssertError(t, aliasgo.ErrPublicKeyNotFound{Alias: "Alice"}.Error(), err)
 	})
 }
 
@@ -313,7 +312,7 @@ func TestClientMine(t *testing.T) {
 		client.SetCache(cache.NewMemory(2))
 		client.SetNetwork(makeNetwork(t))
 		_, err := client.Mine("Test", 1, nil)
-		testinggo.AssertError(t, fmt.Sprintf(bcgo.ERROR_NO_ENTRIES_TO_MINE, "Test"), err)
+		testinggo.AssertError(t, bcgo.ErrNoEntriesToMine{Channel: "Test"}.Error(), err)
 	})
 	t.Run("SingleEntry", func(t *testing.T) {
 		root := testinggo.SetEnvTempDir(t, "ROOT", "root")
