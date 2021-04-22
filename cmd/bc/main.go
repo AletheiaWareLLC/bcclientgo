@@ -17,6 +17,7 @@
 package main
 
 import (
+	"aletheiaware.com/aliasgo"
 	"aletheiaware.com/bcclientgo"
 	"aletheiaware.com/bcgo"
 	"aletheiaware.com/cryptogo"
@@ -48,23 +49,27 @@ func main() {
 		switch args[0] {
 		case "init":
 			PrintLegalese(os.Stdout)
-			node, err := client.Init(&bcgo.PrintingMiningListener{Output: os.Stdout})
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			log.Println("Initialized")
-			if err := bcclientgo.PrintNode(os.Stdout, node); err != nil {
-				log.Println(err)
-				return
-			}
-		case "node":
 			node, err := client.Node()
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			if err := bcclientgo.PrintNode(os.Stdout, node); err != nil {
+			if err := aliasgo.Register(node, &bcgo.PrintingMiningListener{Output: os.Stdout}); err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println("Initialized")
+			if err := bcclientgo.PrintIdentity(os.Stdout, node.Account()); err != nil {
+				log.Println(err)
+				return
+			}
+		case "identity":
+			account, err := client.Account()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if err := bcclientgo.PrintIdentity(os.Stdout, account); err != nil {
 				log.Println(err)
 				return
 			}
@@ -357,7 +362,7 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintf(output, "\t%s - display usage\n", os.Args[0])
 	fmt.Fprintf(output, "\t%s init - initializes environment, generates key pair, and registers alias\n", os.Args[0])
 	fmt.Fprintln(output)
-	fmt.Fprintf(output, "\t%s node - display registered alias and public key\n", os.Args[0])
+	fmt.Fprintf(output, "\t%s identity - display registered alias and public key\n", os.Args[0])
 	fmt.Fprintf(output, "\t%s alias [alias] - display public key for given alias\n", os.Args[0])
 	fmt.Fprintln(output)
 	fmt.Fprintf(output, "\t%s keys - display all stored keys\n", os.Args[0])

@@ -30,32 +30,33 @@ func NewMockBCClient(t *testing.T) bcclientgo.BCClient {
 }
 
 type MockBCClient struct {
-	MockRoot                                    string
-	MockPeers                                   []string
-	MockCache                                   bcgo.Cache
-	MockNetwork                                 bcgo.Network
-	MockNode                                    bcgo.Node
-	MockListener                                bcgo.MiningListener
-	MockAlias                                   string
-	MockPeer                                    string
-	MockSignedIn                                bool
-	MockPublicKeyBytes                          []byte
-	MockPublicKeyFormat                         cryptogo.PublicKeyFormat
-	MockChannel                                 string
-	MockHeadHash, MockBlockHash, MockRecordHash []byte
-	MockBlockCallback                           func([]byte, *bcgo.Block) error
-	MockBlockCallbackResults                    []*MockBlockCallbackResult
-	MockBlock                                   *bcgo.Block
-	MockRecord                                  *bcgo.Record
-	MockWriter                                  io.Writer
-	MockAccesses                                []string
-	MockReader                                  io.Reader
-	MockWriteCount                              int
-	MockThreshold                               uint64
-	MockPassword                                []byte
-	MockAccessCode                              string
+	MockRoot                                                  string
+	MockPeers                                                 []string
+	MockCache                                                 bcgo.Cache
+	MockNetwork                                               bcgo.Network
+	MockAccount                                               bcgo.Account
+	MockNode                                                  bcgo.Node
+	MockListener                                              bcgo.MiningListener
+	MockAlias                                                 string
+	MockPeer                                                  string
+	MockHasCache, MockHasNetwork, MockHasAccount, MockHasNode bool
+	MockPublicKeyBytes                                        []byte
+	MockPublicKeyFormat                                       cryptogo.PublicKeyFormat
+	MockChannel                                               string
+	MockHeadHash, MockBlockHash, MockRecordHash               []byte
+	MockBlockCallback                                         func([]byte, *bcgo.Block) error
+	MockBlockCallbackResults                                  []*MockBlockCallbackResult
+	MockBlock                                                 *bcgo.Block
+	MockRecord                                                *bcgo.Record
+	MockWriter                                                io.Writer
+	MockAccesses                                              []string
+	MockReader                                                io.Reader
+	MockWriteCount                                            int
+	MockThreshold                                             uint64
+	MockPassword                                              []byte
+	MockAccessCode                                            string
 
-	MockRootError, MockCacheError, MockNetworkError, MockNodeError, MockInitError, MockPublicKeyError                                      error
+	MockRootError, MockCacheError, MockNetworkError, MockAccountError, MockNodeError, MockPublicKeyError                                   error
 	MockHeadError, MockChainError, MockBlockError, MockRecordError, MockPushError, MockPullError                                           error
 	MockPurgeError, MockImportError, MockExportError, MockReadError, MockReadKeyError, MockReadPayloadError, MockWriteError, MockMineError error
 }
@@ -76,17 +77,28 @@ func (c *MockBCClient) Network() (bcgo.Network, error) {
 	return c.MockNetwork, c.MockNetworkError
 }
 
+func (c *MockBCClient) Account() (bcgo.Account, error) {
+	return c.MockAccount, c.MockAccountError
+}
+
 func (c *MockBCClient) Node() (bcgo.Node, error) {
 	return c.MockNode, c.MockNodeError
 }
 
-func (c *MockBCClient) Init(listener bcgo.MiningListener) (bcgo.Node, error) {
-	c.MockListener = listener
-	return c.MockNode, c.MockNodeError
+func (c *MockBCClient) HasCache() bool {
+	return c.MockHasCache
 }
 
-func (c *MockBCClient) IsSignedIn() bool {
-	return c.MockSignedIn
+func (c *MockBCClient) HasNetwork() bool {
+	return c.MockHasNetwork
+}
+
+func (c *MockBCClient) HasAccount() bool {
+	return c.MockHasAccount
+}
+
+func (c *MockBCClient) HasNode() bool {
+	return c.MockHasNode
 }
 
 func (c *MockBCClient) PublicKey(alias string) ([]byte, cryptogo.PublicKeyFormat, error) {
@@ -200,6 +212,10 @@ func (c *MockBCClient) SetCache(cache bcgo.Cache) {
 
 func (c *MockBCClient) SetNetwork(network bcgo.Network) {
 	c.MockNetwork = network
+}
+
+func (c *MockBCClient) SetAccount(account bcgo.Account) {
+	c.MockAccount = account
 }
 
 func (c *MockBCClient) SetNode(node bcgo.Node) {
