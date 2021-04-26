@@ -46,6 +46,7 @@ func makeAlias(t *testing.T, cache bcgo.Cache, alias string) bcgo.Account {
 	testinggo.AssertNoError(t, err)
 
 	block := &bcgo.Block{
+		Timestamp: 1,
 		Entry: []*bcgo.BlockEntry{
 			&bcgo.BlockEntry{
 				Record:     record,
@@ -58,6 +59,7 @@ func makeAlias(t *testing.T, cache bcgo.Cache, alias string) bcgo.Account {
 	testinggo.AssertNoError(t, err)
 
 	err = cache.PutHead(aliasgo.ALIAS, &bcgo.Reference{
+		Timestamp:   1,
 		ChannelName: aliasgo.ALIAS,
 		BlockHash:   blockHash,
 	})
@@ -120,13 +122,13 @@ func TestClientAlias(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		cache := cache.NewMemory(2)
 		account := makeAlias(t, cache, "Alice")
-		expectedBytes, expectedFormat, err := account.PublicKey()
+		expectedFormat, expectedBytes, err := account.PublicKey()
 		testinggo.AssertNoError(t, err)
 		expectedKey := base64.RawURLEncoding.EncodeToString(expectedBytes)
 		client := bcclientgo.NewBCClient()
 		client.SetCache(cache)
 		client.SetNetwork(makeNetwork(t))
-		actualBytes, actualFormat, err := client.PublicKey("Alice")
+		actualFormat, actualBytes, err := client.PublicKey("Alice")
 		testinggo.AssertNoError(t, err)
 
 		actualKey := base64.RawURLEncoding.EncodeToString(actualBytes)
@@ -160,6 +162,7 @@ func TestClientHead(t *testing.T) {
 		testinggo.AssertNoError(t, err)
 		testinggo.AssertNoError(t, cache.PutBlock(hash, block))
 		testinggo.AssertNoError(t, cache.PutHead("Test", &bcgo.Reference{
+			Timestamp:   1,
 			ChannelName: "Test",
 			BlockHash:   hash,
 		}))

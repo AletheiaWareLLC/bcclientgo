@@ -101,9 +101,9 @@ func (c *MockBCClient) HasNode() bool {
 	return c.MockHasNode
 }
 
-func (c *MockBCClient) PublicKey(alias string) ([]byte, cryptogo.PublicKeyFormat, error) {
+func (c *MockBCClient) PublicKey(alias string) (cryptogo.PublicKeyFormat, []byte, error) {
 	c.MockAlias = alias
-	return c.MockPublicKeyBytes, c.MockPublicKeyFormat, c.MockPublicKeyError
+	return c.MockPublicKeyFormat, c.MockPublicKeyBytes, c.MockPublicKeyError
 }
 
 func (c *MockBCClient) Head(channel string) ([]byte, error) {

@@ -75,7 +75,7 @@ func main() {
 			}
 		case "alias":
 			if len(args) > 1 {
-				bytes, format, err := client.PublicKey(args[1])
+				format, bytes, err := client.PublicKey(args[1])
 				if err != nil {
 					log.Println(err)
 					return
